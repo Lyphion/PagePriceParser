@@ -1,4 +1,4 @@
-package org.example.command;
+package me.lyphium.pagepriceparser.command;
 
 import java.util.*;
 
