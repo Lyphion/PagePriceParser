@@ -3,6 +3,7 @@ package me.lyphium.pagepriceparser;
 import lombok.Getter;
 import me.lyphium.pagepriceparser.command.Command;
 import me.lyphium.pagepriceparser.command.HelpCommand;
+import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PageParseThread;
 
 import java.util.HashMap;
@@ -12,6 +13,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Getter
 public class Bot {
 
     @Getter
@@ -24,9 +26,9 @@ public class Bot {
         put("[\\d]+(?=d)", 86400L);
     }};
 
-    @Getter
     private boolean running;
     private PageParseThread parser;
+    private DatabaseConnection database;
 
     public Bot() {
         instance = this;
@@ -43,6 +45,7 @@ public class Bot {
             }
         }
 
+        this.database = new DatabaseConnection("127.0.0.1", 3306, "AutoPreise", "root", "");
         this.parser = new PageParseThread(delay);
 
         System.out.println("Checking Pages every " + (delay / 1000) + "sec");
@@ -52,22 +55,26 @@ public class Bot {
         this.running = true;
         System.out.println("Starting Bot...");
 
+        database.connect();
         parser.start();
 
-        handleInputs();
+        handleInput();
     }
 
     public void stop() {
         this.running = false;
 
+        database.disconnect();
+        parser.cancel();
+
         System.out.println("Stopping Bot...");
     }
 
-    private void handleInputs() {
+    private void handleInput() {
         final Scanner scanner = new Scanner(System.in);
 
         String line;
-        while (scanner.hasNext()) {
+        while (running && scanner.hasNext()) {
             line = scanner.nextLine();
 
             if (line.toLowerCase().startsWith("exit")) {
