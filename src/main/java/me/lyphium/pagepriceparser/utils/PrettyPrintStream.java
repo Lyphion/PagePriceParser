@@ -7,9 +7,10 @@ import java.util.Date;
 public class PrettyPrintStream extends PrintStream {
 
     private static final Date DATE = new Date();
-    private static boolean empty = true;
-    private static PrettyPrintStream cur;
     private static final Object LOCK = new Object();
+
+    private static PrettyPrintStream cur;
+    private static boolean empty = true;
 
     private final String prefix;
 
@@ -20,8 +21,11 @@ public class PrettyPrintStream extends PrintStream {
 
     @Override
     public void println() {
-        super.println();
-        empty = true;
+        synchronized (LOCK) {
+            super.println();
+            empty = true;
+            cur = null;
+        }
     }
 
     @Override
@@ -110,6 +114,9 @@ public class PrettyPrintStream extends PrintStream {
 
     @Override
     public void print(String s) {
+        if (s == null)
+            s = "null";
+
         synchronized (LOCK) {
             if (cur != null && cur != this) {
                 super.write('\n');
@@ -124,10 +131,8 @@ public class PrettyPrintStream extends PrintStream {
             if (split.length == 0) {
                 if (empty) {
                     super.print(prefix);
-                } else {
-                    super.print(prefix + "null");
+                    empty = false;
                 }
-                empty = false;
                 return;
             }
 
