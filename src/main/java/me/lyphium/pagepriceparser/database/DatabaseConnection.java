@@ -107,6 +107,7 @@ public class DatabaseConnection {
     private void syncUpdate(PreparedStatement statement) {
         try {
             statement.executeUpdate();
+            statement.close();
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -114,6 +115,32 @@ public class DatabaseConnection {
 
     private void update(PreparedStatement statement) {
         service.execute(() -> syncUpdate(statement));
+    }
+
+    private void close(ResultSet set, PreparedStatement statement) {
+        try {
+            if (set != null) {
+                set.close();
+            }
+            if (statement != null) {
+                statement.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String toStringData(Object o) {
+        if (o == null) {
+            return "NULL";
+        } else if (o instanceof Number) {
+            return o.toString();
+        } else if (o instanceof Boolean) {
+            return (Boolean) o ? "1" : "0";
+        } else if (o instanceof Date) {
+            return "'" + new Timestamp(((Date) o).getTime()).toString() + "'";
+        }
+        return "'" + o.toString() + "'";
     }
 
 }
