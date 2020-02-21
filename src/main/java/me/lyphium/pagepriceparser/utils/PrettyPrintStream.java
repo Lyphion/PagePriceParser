@@ -9,7 +9,7 @@ public class PrettyPrintStream extends PrintStream {
     private static final Date DATE = new Date();
     private static final Object LOCK = new Object();
 
-    private static PrettyPrintStream cur;
+    private static PrettyPrintStream cur = null;
     private static boolean empty = true;
 
     private final String prefix;
@@ -21,11 +21,7 @@ public class PrettyPrintStream extends PrintStream {
 
     @Override
     public void println() {
-        synchronized (LOCK) {
-            super.println();
-            empty = true;
-            cur = null;
-        }
+        println("");
     }
 
     @Override
@@ -144,7 +140,7 @@ public class PrettyPrintStream extends PrintStream {
                     builder.append(line);
                 }
 
-                empty = line.charAt(line.length() - 1) == '\n';
+                empty = !line.isEmpty() && line.charAt(line.length() - 1) == '\n';
             }
 
             if (empty) {

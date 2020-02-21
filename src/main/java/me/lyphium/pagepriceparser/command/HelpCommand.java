@@ -1,5 +1,7 @@
 package me.lyphium.pagepriceparser.command;
 
+import java.util.Arrays;
+
 public class HelpCommand extends Command {
 
     public HelpCommand() {
@@ -36,7 +38,7 @@ public class HelpCommand extends Command {
                 if (!command.usage.isEmpty())
                     builder.append("» ").append("Usage: ").append(command.usage).append('\n');
                 if (command.getAliases().length > 0)
-                    builder.append("» ").append("Aliases: ").append(String.join(", ", command.getAliases())).append('\n');
+                    builder.append("» ").append("Aliases: ").append(Arrays.toString(command.getAliases())).append('\n');
             }
         } else {
             return false;

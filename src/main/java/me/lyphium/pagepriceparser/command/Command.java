@@ -1,7 +1,10 @@
 package me.lyphium.pagepriceparser.command;
 
+import lombok.Getter;
+
 import java.util.*;
 
+@Getter
 public abstract class Command {
 
     private static final List<Command> COMMANDS = new ArrayList<>();
@@ -33,18 +36,6 @@ public abstract class Command {
     }
 
     public abstract boolean onCommand(String label, String[] args);
-
-    public String getName() {
-        return name;
-    }
-
-    public String getDescription() {
-        return description;
-    }
-
-    public String getUsage() {
-        return usage;
-    }
 
     public final String[] getAliases() {
         return Arrays.copyOf(aliases, aliases.length);
