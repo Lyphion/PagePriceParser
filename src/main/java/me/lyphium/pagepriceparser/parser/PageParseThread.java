@@ -3,13 +3,12 @@ package me.lyphium.pagepriceparser.parser;
 import lombok.Getter;
 import lombok.Setter;
 import me.lyphium.pagepriceparser.Bot;
+import me.lyphium.pagepriceparser.utils.Utils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -34,11 +33,12 @@ public class PageParseThread extends Thread {
 
                 System.out.println("Updating Prices...");
 
-                // TODO Get pages from database and update them
+                update();
 
-                System.out.println("Finished: Updated Prices");
+                time = System.currentTimeMillis() - time;
+                System.out.println("Finished: Updated the Prices (" + time + "ms)");
 
-                time = delay - (System.currentTimeMillis() - time);
+                time = delay - time;
                 if (time > 0) {
                     Thread.sleep(time);
                 }
@@ -46,6 +46,10 @@ public class PageParseThread extends Thread {
                 e.printStackTrace();
             }
         }
+    }
+
+    public synchronized void update() {
+        // TODO Get pages from database and update them
     }
 
     public void cancel() {
@@ -82,13 +86,13 @@ public class PageParseThread extends Thread {
         final Map<PriceType, Double> prices = new EnumMap<>(PriceType.class);
 
         try {
-            switch (getDomain(doc.baseUri())) {
+            switch (Utils.getDomain(doc.baseUri())) {
                 case "clever-tanken.de":
                     final double dp = Double.parseDouble(doc.getElementById("current-price-1").html()) + 0.009;
                     final double bp = Double.parseDouble(doc.getElementById("current-price-2").html()) + 0.009;
 
-                    prices.put(PriceType.DIESEL, round(dp, 3));
-                    prices.put(PriceType.BENZIN, round(bp, 3));
+                    prices.put(PriceType.DIESEL, Utils.round(dp, 3));
+                    prices.put(PriceType.BENZIN, Utils.round(bp, 3));
                     break;
                 case "find.shell.com":
                     final Element list = doc.selectFirst(".fuels");
@@ -101,9 +105,9 @@ public class PageParseThread extends Thread {
                             final double price = Double.parseDouble(priceString.split("/")[0].substring(1));
 
                             if (name.equals("Shell Diesel FuelSave")) {
-                                prices.put(PriceType.DIESEL, round(price, 3));
+                                prices.put(PriceType.DIESEL, Utils.round(price, 3));
                             } else if (name.equals("Shell Super FuelSave E10")) {
-                                prices.put(PriceType.BENZIN, round(price, 3));
+                                prices.put(PriceType.BENZIN, Utils.round(price, 3));
                             }
                         }
                     }
@@ -116,20 +120,6 @@ public class PageParseThread extends Thread {
         }
 
         return prices;
-    }
-
-    private String getDomain(String url) {
-        try {
-            final String domain = new URI(url).getHost();
-            return domain.startsWith("www.") ? domain.substring(4) : domain;
-        } catch (URISyntaxException e) {
-            return null;
-        }
-    }
-
-    private double round(double value, int decimal) {
-        final double pow = Math.pow(10, decimal);
-        return Math.round(value * pow) / pow;
     }
 
 }

@@ -4,6 +4,10 @@ public enum PriceType {
 
     DIESEL,
     BENZIN,
-    AUTOGAS
+    AUTOGAS;
+
+    public String getName() {
+        return name().substring(0, 1) + name().substring(1).toUpperCase();
+    }
 
 }
