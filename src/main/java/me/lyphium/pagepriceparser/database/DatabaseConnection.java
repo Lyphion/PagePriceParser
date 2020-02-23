@@ -5,10 +5,8 @@ import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.Date;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -23,7 +21,7 @@ public class DatabaseConnection {
 
     private final String username, password;
 
-    private final ExecutorService service = Executors.newCachedThreadPool();
+    private ExecutorService service;
     private Connection con;
 
     public DatabaseConnection(String host, int port, String database, String username, String password) {
@@ -43,9 +41,17 @@ public class DatabaseConnection {
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
             this.con = DriverManager.getConnection(
-                    String.format("jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin", host, port, database),
+                    String.format(
+                            "jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin",
+                            host, port, database
+                    ),
                     username, password
             );
+
+            if (service == null) {
+                service = Executors.newCachedThreadPool();
+            }
+
             System.out.println("Connected to database!");
             return true;
         } catch (SQLException e) {
@@ -65,9 +71,16 @@ public class DatabaseConnection {
         }
 
         try {
-            con.close();
-            con = null;
-            service.shutdown();
+            if (con != null) {
+                con.close();
+                con = null;
+            }
+
+            if (service != null) {
+                service.shutdown();
+                service = null;
+            }
+
             System.out.println("Disconnected from database!");
             return true;
         } catch (SQLException e) {
@@ -113,10 +126,14 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String execute = "SELECT p.fuelid, p.time, p.value " +
-                "FROM prices p " +
-                "INNER JOIN fuels f on p.fuelid = f.id " +
-                "WHERE p.pageid = " + data.getId() + " AND p.time >= '" + begin + "' AND p.time <= '" + end + "';";
+        final String execute = String.format(
+                "SELECT p.fuelid, p.time, p.value " +
+                        "FROM prices p " +
+                        "INNER JOIN fuels f on p.fuelid = f.id " +
+                        "WHERE p.pageid = %d AND p.time >= '%s' AND p.time <= '%s';",
+                data.getId(), begin, end
+        );
+
         final PreparedStatement statement = createStatement(execute);
         final ResultSet set = syncExecute(statement);
 
@@ -142,7 +159,11 @@ public class DatabaseConnection {
             return null;
         }
 
-        final String execute = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER('" + name + "') LIMIT 1;";
+        final String execute = String.format(
+                "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER('%s') LIMIT 1;",
+                name
+        );
+
         final PreparedStatement statement = createStatement(execute);
         final ResultSet set = syncExecute(statement);
 
@@ -173,7 +194,11 @@ public class DatabaseConnection {
             return null;
         }
 
-        final String execute = "SELECT name, url, address FROM pages WHERE id = " + id + " LIMIT 1;";
+        final String execute = String.format(
+                "SELECT name, url, address FROM pages WHERE id = %d LIMIT 1;",
+                id
+        );
+
         final PreparedStatement statement = createStatement(execute);
         final ResultSet set = syncExecute(statement);
 
@@ -206,10 +231,13 @@ public class DatabaseConnection {
 
         final Map<Integer, PriceData> data = new HashMap<>();
 
-        final String execute = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
-                "FROM prices pr " +
-                "INNER JOIN pages pa on pr.pageid = pa.id " +
-                "WHERE pr.fuelid = " + fuel.getId() + ";";
+        final String execute = String.format(
+                "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
+                        "FROM prices pr " +
+                        "INNER JOIN pages pa on pr.pageid = pa.id " +
+                        "WHERE pr.fuelid = %d;",
+                fuel.getId()
+        );
 
         final PreparedStatement statement = createStatement(execute);
         final ResultSet set = syncExecute(statement);
@@ -258,8 +286,11 @@ public class DatabaseConnection {
         for (PriceData pd : data) {
             for (Entry<Fuel, Map<Long, Float>> fuelsEntry : pd.getPrices().entrySet()) {
                 for (Entry<Long, Float> timeEntry : fuelsEntry.getValue().entrySet()) {
-                    final String value = "(" + pd.getId() + ", " + fuelsEntry.getKey().getId() + ", " +
-                            toStringData(new Timestamp(timeEntry.getKey())) + ", " + timeEntry.getValue() + ")";
+                    final String value = String.format(
+                            "(%d, %d, '%s', %f)",
+                            pd.getId(), fuelsEntry.getKey().getId(), new Timestamp(timeEntry.getKey()), timeEntry.getValue()
+                    );
+
                     priceData.add(value);
                 }
             }
@@ -270,9 +301,13 @@ public class DatabaseConnection {
         }
 
         final String values = String.join(", ", priceData);
-        final String update = "INSERT INTO prices (pageid, fuelid, time, value) " +
-                "VALUES " + values + " " +
-                "ON DUPLICATE KEY UPDATE value = VALUES(value);";
+        final String update = String.format(
+                "INSERT INTO prices (pageid, fuelid, time, value) " +
+                        "VALUES %s " +
+                        "ON DUPLICATE KEY UPDATE value = VALUES(value);",
+                values
+        );
+
         final PreparedStatement statement = createStatement(update);
 
         update(statement);
@@ -353,7 +388,7 @@ public class DatabaseConnection {
             return o.toString();
         } else if (o instanceof Boolean) {
             return (Boolean) o ? "1" : "0";
-        } else if (o instanceof Date && !(o instanceof Timestamp)) {
+        } else if (o instanceof Date) {
             return "'" + new Timestamp(((Date) o).getTime()).toString() + "'";
         }
         return "'" + o.toString() + "'";
