@@ -60,4 +60,15 @@ public class PriceData {
         prices.get(fuel).put(time, value);
     }
 
+    @Override
+    public String toString() {
+        return "PriceData{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", url='" + url + '\'' +
+                ", address='" + address + '\'' +
+                ", prices=" + prices +
+                '}';
+    }
+
 }

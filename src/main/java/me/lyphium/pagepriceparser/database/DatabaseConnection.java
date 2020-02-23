@@ -6,6 +6,7 @@ import me.lyphium.pagepriceparser.parser.PriceData;
 
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -76,14 +77,14 @@ public class DatabaseConnection {
     }
 
     public List<PriceData> getPages() {
-        final List<PriceData> data = new ArrayList<>();
-
         if (!isConnected()) {
             System.err.println("No connection available!");
-            return data;
+            return null;
         }
 
-        final String execute = "SELECT * from pages;";
+        final List<PriceData> data = new ArrayList<>();
+
+        final String execute = "SELECT id, name, url, address from pages;";
         final PreparedStatement statement = createStatement(execute);
         final ResultSet set = syncExecute(statement);
 
@@ -121,9 +122,9 @@ public class DatabaseConnection {
 
         try {
             while (set.next()) {
-                final Fuel fuel = Fuel.getByID(set.getInt("p.fuelid"));
-                final long time = set.getTimestamp("p.time").getTime();
-                final float value = set.getFloat("p.value");
+                final Fuel fuel = Fuel.getByID(set.getInt("fuelid"));
+                final long time = set.getTimestamp("time").getTime();
+                final float value = set.getFloat("value");
                 data.addPrice(fuel, time, value);
             }
             return true;
@@ -141,8 +142,29 @@ public class DatabaseConnection {
             return null;
         }
 
-        // TODO
-        return null;
+        final String execute = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER('" + name + "') LIMIT 1;";
+        final PreparedStatement statement = createStatement(execute);
+        final ResultSet set = syncExecute(statement);
+
+        try {
+            if (!set.next()) {
+                return null;
+            }
+
+            final int id = set.getInt("id");
+            final String url = set.getString("url");
+            final String address = set.getString("address");
+
+            final PriceData data = new PriceData(id, name, url, address);
+            loadPriceData(data, begin, end);
+
+            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            close(set, statement);
+        }
     }
 
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
@@ -151,8 +173,79 @@ public class DatabaseConnection {
             return null;
         }
 
-        // TODO
-        return null;
+        final String execute = "SELECT name, url, address FROM pages WHERE id = " + id + " LIMIT 1;";
+        final PreparedStatement statement = createStatement(execute);
+        final ResultSet set = syncExecute(statement);
+
+        try {
+            if (!set.next()) {
+                return null;
+            }
+
+            final String name = set.getString("name");
+            final String url = set.getString("url");
+            final String address = set.getString("address");
+
+            final PriceData data = new PriceData(id, name, url, address);
+            loadPriceData(data, begin, end);
+
+            return data;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            close(set, statement);
+        }
+    }
+
+    public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
+        if (!isConnected()) {
+            System.err.println("No connection available!");
+            return null;
+        }
+
+        final Map<Integer, PriceData> data = new HashMap<>();
+
+        final String execute = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
+                "FROM prices pr " +
+                "INNER JOIN pages pa on pr.pageid = pa.id " +
+                "WHERE pr.fuelid = " + fuel.getId() + ";";
+
+        final PreparedStatement statement = createStatement(execute);
+        final ResultSet set = syncExecute(statement);
+
+        try {
+            while (set.next()) {
+                final int id = set.getInt("id");
+                final boolean existed = data.containsKey(id);
+
+                final PriceData priceData;
+                if (!existed) {
+                    final String name = set.getString("name");
+                    final String url = set.getString("url");
+                    final String address = set.getString("address");
+
+                    priceData = new PriceData(id, name, url, address);
+                } else {
+                    priceData = data.get(id);
+                }
+
+                final long time = set.getTimestamp("time").getTime();
+                final float value = set.getFloat("value");
+
+                priceData.addPrice(fuel, time, value);
+                if (!existed) {
+                    data.put(id, priceData);
+                }
+            }
+
+            return new ArrayList<>(data.values());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            close(set, statement);
+        }
     }
 
     public boolean savePriceData(List<PriceData> data) {
@@ -183,6 +276,7 @@ public class DatabaseConnection {
         final PreparedStatement statement = createStatement(update);
 
         update(statement);
+
         return true;
     }
 
