@@ -46,9 +46,9 @@ public class Utils {
         }
     }
 
-    public double round(double value, int decimal) {
+    public float round(double value, int decimal) {
         final double pow = Math.pow(10, decimal);
-        return Math.round(value * pow) / pow;
+        return (float) (Math.round(value * pow) / pow);
     }
 
 }

@@ -23,6 +23,13 @@
             <artifactId>jsoup</artifactId>
             <version>LATEST</version>
         </dependency>
+
+        <!-- MySQL Driver -->
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>LATEST</version>
+        </dependency>
     </dependencies>
 
     <build>

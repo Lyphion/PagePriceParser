@@ -3,14 +3,18 @@ package me.lyphium.pagepriceparser.parser;
 import lombok.Getter;
 import lombok.Setter;
 import me.lyphium.pagepriceparser.Bot;
+import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.utils.Utils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 public class PageParseThread extends Thread {
 
@@ -49,24 +53,38 @@ public class PageParseThread extends Thread {
     }
 
     public synchronized void update() {
-        // TODO Get pages from database and update them
+        final DatabaseConnection database = Bot.getInstance().getDatabase();
+
+        if (!database.isConnected()) {
+            System.err.println("Can't update database! No connection available!");
+            return;
+        }
+
+        final List<PriceData> pages = database.getPages();
+
+        pages.parallelStream().forEach(page -> {
+            final Document doc = loadPage(page.getUrl());
+            final Map<Fuel, Float> prices = loadPrices(doc);
+
+            if (prices == null) {
+                System.err.println("Couldn't update prices for: " + page.getName());
+                return;
+            }
+
+            final long time = System.currentTimeMillis();
+            for (Entry<Fuel, Float> entry : prices.entrySet()) {
+                page.getPrices().put(
+                        entry.getKey(),
+                        Collections.singletonMap(time, entry.getValue())
+                );
+            }
+        });
+
+        database.savePriceData(pages);
     }
 
     public void cancel() {
         this.interrupt();
-    }
-
-    private boolean updatePage(String url) {
-        final Document doc = loadPage(url);
-        final Map<PriceType, Double> prices = loadPrices(doc);
-
-        if (prices == null) {
-            return false;
-        }
-
-        // TODO Insert into database
-
-        return true;
     }
 
     private Document loadPage(String url) {
@@ -78,21 +96,21 @@ public class PageParseThread extends Thread {
         }
     }
 
-    private Map<PriceType, Double> loadPrices(Document doc) {
+    private Map<Fuel, Float> loadPrices(Document doc) {
         if (doc == null) {
             return null;
         }
 
-        final Map<PriceType, Double> prices = new EnumMap<>(PriceType.class);
+        final Map<Fuel, Float> prices = new EnumMap<>(Fuel.class);
 
         try {
             switch (Utils.getDomain(doc.baseUri())) {
                 case "clever-tanken.de":
-                    final double dp = Double.parseDouble(doc.getElementById("current-price-1").html()) + 0.009;
-                    final double bp = Double.parseDouble(doc.getElementById("current-price-2").html()) + 0.009;
+                    final float dp = Float.parseFloat(doc.getElementById("current-price-1").html()) + 0.009F;
+                    final float bp = Float.parseFloat(doc.getElementById("current-price-2").html()) + 0.009F;
 
-                    prices.put(PriceType.DIESEL, Utils.round(dp, 3));
-                    prices.put(PriceType.BENZIN, Utils.round(bp, 3));
+                    prices.put(Fuel.DIESEL, Utils.round(dp, 3));
+                    prices.put(Fuel.BENZIN, Utils.round(bp, 3));
                     break;
                 case "find.shell.com":
                     final Element list = doc.selectFirst(".fuels");
@@ -102,12 +120,12 @@ public class PageParseThread extends Thread {
                         if (nameElement != null) {
                             final String name = nameElement.html();
                             final String priceString = element.selectFirst(".fuels__row-price").html();
-                            final double price = Double.parseDouble(priceString.split("/")[0].substring(1));
+                            final float price = Float.parseFloat(priceString.split("/")[0].substring(1));
 
                             if (name.equals("Shell Diesel FuelSave")) {
-                                prices.put(PriceType.DIESEL, Utils.round(price, 3));
+                                prices.put(Fuel.DIESEL, Utils.round(price, 3));
                             } else if (name.equals("Shell Super FuelSave E10")) {
-                                prices.put(PriceType.BENZIN, Utils.round(price, 3));
+                                prices.put(Fuel.BENZIN, Utils.round(price, 3));
                             }
                         }
                     }

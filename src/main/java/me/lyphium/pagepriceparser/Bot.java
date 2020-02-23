@@ -36,7 +36,7 @@ public class Bot {
             }
         }
 
-        this.database = new DatabaseConnection("127.0.0.1", 3306, "AutoPreise", "root", "");
+        this.database = new DatabaseConnection("127.0.0.1", 3306, "FuelPrices", "root", "");
         this.parser = new PageParseThread(delay);
 
         System.out.println("Checking Pages every " + (delay / 1000) + "sec");
