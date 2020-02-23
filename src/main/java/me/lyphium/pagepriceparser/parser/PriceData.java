@@ -2,13 +2,14 @@ package me.lyphium.pagepriceparser.parser;
 
 import lombok.Getter;
 
+import java.io.Serializable;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
 @Getter
-public class PriceData {
+public class PriceData implements Serializable {
 
     private final int id;
     private final String name;

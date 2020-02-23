@@ -35,17 +35,26 @@ public class PageParseThread extends Thread {
             try {
                 long time = System.currentTimeMillis();
 
-                System.out.println("Updating Prices...");
+                if (!Bot.getInstance().getDatabase().isConnected()) {
+                    System.err.println("Can't update database! No connection available!");
 
-                update();
+                    time = delay;
+                } else {
+                    System.out.println("Updating Prices...");
 
-                time = System.currentTimeMillis() - time;
-                System.out.println("Finished: Updated the Prices (" + time + "ms)");
+                    update();
 
-                time = delay - time;
+                    time = System.currentTimeMillis() - time;
+                    System.out.println("Finished: Updated the Prices (" + time + "ms)");
+
+                    time = delay - time;
+                }
+
                 if (time > 0) {
                     Thread.sleep(time);
                 }
+            } catch (InterruptedException e) {
+                // Thrown when PageParseThread is shutting down
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -83,8 +92,8 @@ public class PageParseThread extends Thread {
         database.savePriceData(pages);
     }
 
-    public void cancel() {
-        this.interrupt();
+    public synchronized void cancel() {
+        interrupt();
     }
 
     private Document loadPage(String url) {

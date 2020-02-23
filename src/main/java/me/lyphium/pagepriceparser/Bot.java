@@ -5,6 +5,7 @@ import me.lyphium.pagepriceparser.command.Command;
 import me.lyphium.pagepriceparser.command.DelayCommand;
 import me.lyphium.pagepriceparser.command.HelpCommand;
 import me.lyphium.pagepriceparser.command.UpdateCommand;
+import me.lyphium.pagepriceparser.connection.ConnectionManager;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PageParseThread;
 import me.lyphium.pagepriceparser.utils.Utils;
@@ -20,6 +21,7 @@ public class Bot {
     private boolean running;
     private PageParseThread parser;
     private DatabaseConnection database;
+    private ConnectionManager connectionManager;
 
     public Bot() {
         instance = this;
@@ -29,15 +31,22 @@ public class Bot {
         registerCommands();
 
         long delay = 60 * 60 * 1000;
+        int port = 14703;
         for (int i = 0; i < args.length; i++) {
             final String part = args[i];
             if (part.equals("-d") && i < args.length - 1) {
                 delay = Utils.calculateDelay(args[i + 1]);
             }
+            if (part.equals("-p") && i < args.length - 1) {
+                if (args[i + 1].matches("(\\d){1,5}")) {
+                    port = Integer.parseUnsignedInt(args[i + 1]);
+                }
+            }
         }
 
         this.database = new DatabaseConnection("127.0.0.1", 3306, "FuelPrices", "root", "");
         this.parser = new PageParseThread(delay);
+        this.connectionManager = new ConnectionManager(port);
 
         System.out.println("Checking Pages every " + (delay / 1000) + "sec");
     }
@@ -48,19 +57,20 @@ public class Bot {
 
         database.connect();
         parser.start();
+        connectionManager.start();
 
         handleInput();
     }
 
     public void stop() {
         this.running = false;
+        System.out.println("Stopping Bot...");
 
         if (database.isConnected()) {
             database.disconnect();
         }
         parser.cancel();
-
-        System.out.println("Stopping Bot...");
+        connectionManager.cancel();
     }
 
     private void handleInput() {

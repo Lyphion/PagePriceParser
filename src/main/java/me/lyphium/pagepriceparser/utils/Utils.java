@@ -28,7 +28,7 @@ public class Utils {
                 Matcher m = p.matcher(s);
 
                 if (m.find()) {
-                    delay += Long.parseLong(s.substring(m.start(), m.end())) * entry.getValue();
+                    delay += Long.parseUnsignedLong(s.substring(m.start(), m.end())) * entry.getValue();
                 }
             }
             return delay * 1000;
