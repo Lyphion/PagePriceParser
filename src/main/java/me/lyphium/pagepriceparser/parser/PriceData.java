@@ -11,6 +11,8 @@ import java.util.Map.Entry;
 @Getter
 public class PriceData implements Serializable {
 
+    private static final long serialVersionUID = 6726811421413544466L;
+
     private final int id;
     private final String name;
     private final String url;
@@ -26,8 +28,8 @@ public class PriceData implements Serializable {
         this.prices = prices;
     }
 
-    public PriceData(int id, String name, String url, String location) {
-        this(id, name, url, location, new EnumMap<>(Fuel.class));
+    public PriceData(int id, String name, String url, String address) {
+        this(id, name, url, address, new EnumMap<>(Fuel.class));
     }
 
     public Map<Fuel, Float> getPrices(long time) {
