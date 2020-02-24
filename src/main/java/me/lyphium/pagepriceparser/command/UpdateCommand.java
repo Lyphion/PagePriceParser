@@ -14,10 +14,16 @@ public class UpdateCommand extends Command {
             return false;
         }
 
+        final Bot bot = Bot.getInstance();
+        if (!bot.getDatabase().isConnected()) {
+            System.err.println("No connection available");
+            return true;
+        }
+
         long time = System.currentTimeMillis();
         System.out.println("Updating Prices...");
 
-        Bot.getInstance().getParser().update();
+        bot.getParser().update();
 
         time = System.currentTimeMillis() - time;
         System.out.println("Finished: Updated the Prices (" + time + "ms)");

@@ -32,7 +32,7 @@ public class ConnectionManager extends Thread {
         try {
             server = new ServerSocket(port);
         } catch (IOException e) {
-            System.err.println("Couldn't setup ServerSocket!");
+            System.err.println("Couldn't setup ServerSocket");
         }
     }
 
@@ -59,7 +59,7 @@ public class ConnectionManager extends Thread {
                 socket.close();
             } catch (ClassNotFoundException | ObjectStreamException e) {
                 // Thrown when data is invalid or corrupted
-                System.err.println("Invalid packet received!");
+                System.err.println("Invalid packet received");
             } catch (SocketTimeoutException e) {
                 // Thrown when socket is timing out or isn't sending any packets
             } catch (SocketException e) {
@@ -87,8 +87,8 @@ public class ConnectionManager extends Thread {
             final DatabaseConnection database = Bot.getInstance().getDatabase();
 
             try {
-                RequestType[] types = request.getTypes();
-                Object[] data = request.getData();
+                final RequestType[] types = request.getTypes();
+                final Object[] data = request.getData();
 
                 if (types == null || types.length == 0) {
                     return new InvalidRequestPacket("Types must contain at least: id, name or fuel");
@@ -154,7 +154,7 @@ public class ConnectionManager extends Thread {
                     return new InvalidRequestPacket("Types must contain at least: id, name or fuel");
                 }
             } catch (Exception e) {
-                System.err.println("Invalid packet received!");
+                System.err.println("Invalid packet received");
                 return new InvalidRequestPacket("Invalid Packet received");
             }
         }

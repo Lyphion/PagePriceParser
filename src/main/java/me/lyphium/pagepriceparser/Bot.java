@@ -1,10 +1,7 @@
 package me.lyphium.pagepriceparser;
 
 import lombok.Getter;
-import me.lyphium.pagepriceparser.command.Command;
-import me.lyphium.pagepriceparser.command.DelayCommand;
-import me.lyphium.pagepriceparser.command.HelpCommand;
-import me.lyphium.pagepriceparser.command.UpdateCommand;
+import me.lyphium.pagepriceparser.command.*;
 import me.lyphium.pagepriceparser.connection.ConnectionManager;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PageParseThread;
@@ -96,6 +93,7 @@ public class Bot {
     private void registerCommands() {
         Command.registerCommand(new DelayCommand());
         Command.registerCommand(new HelpCommand());
+        Command.registerCommand(new PrintCommand());
         Command.registerCommand(new UpdateCommand());
     }
 

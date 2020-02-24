@@ -11,7 +11,7 @@ public enum Fuel {
     }
 
     public String toString() {
-        return name().substring(0, 1) + name().substring(1).toUpperCase();
+        return name().substring(0, 1) + name().substring(1).toLowerCase();
     }
 
     public static Fuel getByName(String name) {

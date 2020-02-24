@@ -36,7 +36,7 @@ public class PageParseThread extends Thread {
                 long time = System.currentTimeMillis();
 
                 if (!Bot.getInstance().getDatabase().isConnected()) {
-                    System.err.println("Can't update database! No connection available!");
+                    System.err.println("Can't update database! No connection available");
 
                     time = delay;
                 } else {
@@ -65,7 +65,7 @@ public class PageParseThread extends Thread {
         final DatabaseConnection database = Bot.getInstance().getDatabase();
 
         if (!database.isConnected()) {
-            System.err.println("Can't update database! No connection available!");
+            System.err.println("Can't update database! No connection available");
             return;
         }
 

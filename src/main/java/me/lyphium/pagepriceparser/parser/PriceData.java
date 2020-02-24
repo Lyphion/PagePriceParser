@@ -49,11 +49,14 @@ public class PriceData implements Serializable {
     }
 
     public float getPrice(Fuel fuel, long time) {
-        if (!prices.containsKey(fuel)) {
-            return -1F;
-        }
+        return hasPrice(fuel, time) ? prices.get(fuel).get(time) : -1;
+    }
 
-        return prices.get(fuel).getOrDefault(time, -1F);
+    public boolean hasPrice(Fuel fuel, long time) {
+        if (!prices.containsKey(fuel)) {
+            return false;
+        }
+        return prices.get(fuel).containsKey(time);
     }
 
     public void addPrice(Fuel fuel, long time, float value) {

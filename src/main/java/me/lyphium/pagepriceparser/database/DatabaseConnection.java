@@ -34,7 +34,7 @@ public class DatabaseConnection {
 
     public boolean connect() {
         if (isConnected()) {
-            System.err.println("Already connected!");
+            System.err.println("Already connected");
             return false;
         }
 
@@ -52,21 +52,21 @@ public class DatabaseConnection {
                 service = Executors.newCachedThreadPool();
             }
 
-            System.out.println("Connected to database!");
+            System.out.println("Connected to database");
             return true;
         } catch (SQLException e) {
-            System.err.println("Couldn't connect to database!");
+            System.err.println("Couldn't connect to database");
             e.printStackTrace();
             return false;
         } catch (ClassNotFoundException e) {
-            System.err.println("No MySQL driver found!");
+            System.err.println("No MySQL driver found");
             return false;
         }
     }
 
     public boolean disconnect() {
         if (!isConnected()) {
-            System.err.println("Already disconnected from database!");
+            System.err.println("Already disconnected from database");
             return false;
         }
 
@@ -81,17 +81,17 @@ public class DatabaseConnection {
                 service = null;
             }
 
-            System.out.println("Disconnected from database!");
+            System.out.println("Disconnected from database");
             return true;
         } catch (SQLException e) {
-            System.err.println("Error while disconnecting from database!");
+            System.err.println("Error while disconnecting from database");
             return false;
         }
     }
 
     public List<PriceData> getPages() {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -122,7 +122,7 @@ public class DatabaseConnection {
 
     public boolean loadPriceData(PriceData data, Timestamp begin, Timestamp end) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return false;
         }
 
@@ -155,7 +155,7 @@ public class DatabaseConnection {
 
     public PriceData getPriceData(String name, Timestamp begin, Timestamp end) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -168,7 +168,7 @@ public class DatabaseConnection {
         final ResultSet set = syncExecute(statement);
 
         try {
-            if (!set.next()) {
+            if (set.next()) {
                 return null;
             }
 
@@ -190,7 +190,7 @@ public class DatabaseConnection {
 
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -225,7 +225,7 @@ public class DatabaseConnection {
 
     public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -278,7 +278,7 @@ public class DatabaseConnection {
 
     public boolean savePriceData(List<PriceData> data) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return false;
         }
 
@@ -287,8 +287,8 @@ public class DatabaseConnection {
             for (Entry<Fuel, Map<Long, Float>> fuelsEntry : pd.getPrices().entrySet()) {
                 for (Entry<Long, Float> timeEntry : fuelsEntry.getValue().entrySet()) {
                     final String value = String.format(
-                            "(%d, %d, '%s', %f)",
-                            pd.getId(), fuelsEntry.getKey().getId(), new Timestamp(timeEntry.getKey()), timeEntry.getValue()
+                            "(%d, %d, '%s', %s)",
+                            pd.getId(), fuelsEntry.getKey().getId(), new Timestamp(timeEntry.getKey()), toStringData(timeEntry.getValue())
                     );
 
                     priceData.add(value);
@@ -325,7 +325,7 @@ public class DatabaseConnection {
 
     private PreparedStatement createStatement(String statement) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -339,7 +339,7 @@ public class DatabaseConnection {
 
     private ResultSet syncExecute(PreparedStatement statement) {
         if (!isConnected()) {
-            System.err.println("No connection available!");
+            System.err.println("No connection available");
             return null;
         }
 
@@ -385,7 +385,7 @@ public class DatabaseConnection {
         if (o == null) {
             return "NULL";
         } else if (o instanceof Number) {
-            return o.toString();
+            return o.toString().replace(',', '.');
         } else if (o instanceof Boolean) {
             return (Boolean) o ? "1" : "0";
         } else if (o instanceof Date) {

@@ -93,8 +93,26 @@ public abstract class Command {
             if (rawSplit.length == 1) {
                 success = command.onCommand(label, new String[0]);
             } else {
-                final String[] args = rawSplit[1].split(" ");
-                success = command.onCommand(label, args);
+                final List<String> tokens = new ArrayList<>();
+                final StringBuilder builder = new StringBuilder();
+
+                boolean quote = false;
+                for (char c : rawSplit[1].toCharArray()) {
+                    if (c == '"') {
+                        quote = !quote;
+                        continue;
+                    }
+
+                    if (c == ' ' && !quote) {
+                        tokens.add(builder.toString());
+                        builder.setLength(0);
+                    } else {
+                        builder.append(c);
+                    }
+                }
+                tokens.add(builder.toString());
+
+                success = command.onCommand(label, tokens.toArray(new String[0]));
             }
             if (!success && !command.usage.isEmpty()) {
                 System.out.println("Usage: " + command.usage);
