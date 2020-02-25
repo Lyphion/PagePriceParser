@@ -70,6 +70,11 @@ public class PageParseThread extends Thread {
         }
 
         final List<PriceData> pages = database.getPages();
+        final long time = System.currentTimeMillis();
+
+        if (pages.isEmpty()) {
+            return;
+        }
 
         pages.parallelStream().forEach(page -> {
             final Document doc = loadPage(page.getUrl());
@@ -80,7 +85,6 @@ public class PageParseThread extends Thread {
                 return;
             }
 
-            final long time = System.currentTimeMillis();
             for (Entry<Fuel, Float> entry : prices.entrySet()) {
                 page.getPrices().put(
                         entry.getKey(),

@@ -6,6 +6,10 @@ public enum Fuel {
     BENZIN,
     AUTOGAS;
 
+    public String getName() {
+        return toString();
+    }
+
     public int getId() {
         return ordinal();
     }

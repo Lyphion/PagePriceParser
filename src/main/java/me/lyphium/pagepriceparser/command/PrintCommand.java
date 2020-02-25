@@ -97,18 +97,23 @@ public class PrintCommand extends Command {
             final Map<Fuel, Map<Long, Float>> prices = data.getPrices();
 
             long min = System.currentTimeMillis(), max = 0;
+            boolean changed = false;
             for (Map<Long, Float> map : prices.values()) {
                 for (long l : map.keySet()) {
                     if (l < min) {
                         min = l;
+                        changed = true;
                     }
                     if (l > max) {
                         max = l;
+                        changed = true;
                     }
                 }
             }
-            begin.setTime(min);
-            end.setTime(max);
+            if (changed) {
+                begin.setTime(min);
+                end.setTime(max);
+            }
 
             final StringBuilder builder = new StringBuilder("--------- Page Information ---------\n");
             builder.append(String.format("ID:      %d\n", data.getId()));
@@ -116,14 +121,14 @@ public class PrintCommand extends Command {
             builder.append(String.format("URL:     %s\n", data.getUrl()));
             builder.append(String.format("Address: %s\n", data.getAddress()));
 
-            if (max == 0) {
-                builder.append("\nNo price data available\n");
+            builder.append(String.format("Begin:   %s\n", toString(begin)));
+            builder.append(String.format("End:     %s\n\n", toString(end)));
+
+            if (!changed) {
+                builder.append("No price data available\n");
                 System.out.print(builder.toString());
                 return true;
             }
-
-            builder.append(String.format("Begin:   %s\n", toString(begin)));
-            builder.append(String.format("End:     %s\n\n", toString(end)));
 
             final List<Fuel> fuels = new ArrayList<>(prices.keySet());
             final int[] colSize = new int[fuels.size()];
@@ -170,7 +175,13 @@ public class PrintCommand extends Command {
 
             System.out.print(builder.toString());
         } else if (args[0].equalsIgnoreCase("fuel")) {
-            final Fuel fuel = Fuel.valueOf(args[1]);
+            final Fuel fuel;
+            if (args[1].matches("(\\d)+")) {
+                fuel = Fuel.getByID(Integer.parseUnsignedInt(args[1]));
+            } else {
+                fuel = Fuel.getByName(args[1]);
+            }
+
             if (fuel == null) {
                 System.err.println("Invalid fuel");
                 return true;
@@ -190,7 +201,80 @@ public class PrintCommand extends Command {
              *        |        |        |
              */
 
-            // TODO Print table, split into groups -> table to many columns
+
+            long min = System.currentTimeMillis(), max = 0;
+            boolean changed = false;
+            for (PriceData priceData : data) {
+                for (Long l : priceData.getPrices(fuel).keySet()) {
+                    if (l < min) {
+                        min = l;
+                        changed = true;
+                    }
+                    if (l > max) {
+                        max = l;
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                begin.setTime(min);
+                end.setTime(max);
+            }
+
+            final StringBuilder builder = new StringBuilder("--------- Fuel Information ---------\n");
+            builder.append(String.format("Fuel:  %s\n", fuel.getName()));
+            builder.append(String.format("Begin: %s\n", toString(begin)));
+            builder.append(String.format("End:   %s\n\n", toString(end)));
+
+            if (!changed) {
+                builder.append("No price data available\n");
+                System.out.print(builder.toString());
+                return true;
+            }
+
+            final int[] colSize = new int[data.size()];
+
+            // Calculate column width
+            for (int i = 0; i < data.size(); i++) {
+                final PriceData priceData = data.get(i);
+                colSize[i] = Math.max(7, priceData.getName().length());
+            }
+
+            // Table head
+            builder.append("                Time");
+            for (int i = 0; i < data.size(); i++) {
+                final PriceData priceData = data.get(i);
+                builder.append(" | ").append(String.format("%" + colSize[i] + "s", priceData.getName()));
+            }
+            builder.append("\n");
+
+            // Table separator
+            builder.append(new String(new char[21]).replace('\0', '-'));
+            for (int i = 0; i < data.size(); i++) {
+                builder.append("+").append(new String(new char[colSize[i] + 2]).replace('\0', '-'));
+            }
+            builder.append('\n');
+
+            final Timestamp time = new Timestamp(0);
+            final List<Long> times = data.parallelStream().flatMap(m -> m.getPrices(fuel).keySet().stream()).distinct().sorted().collect(Collectors.toList());
+
+            // Table body
+            for (long l : times) {
+                time.setTime(l);
+                builder.append(String.format(" %s", toString(time)));
+
+                for (int j = 0; j < data.size(); j++) {
+                    final PriceData priceData = data.get(j);
+                    if (priceData.hasPrice(fuel, l)) {
+                        builder.append(String.format(" |%" + colSize[j] + ".3f€", priceData.getPrice(fuel, l)));
+                    } else {
+                        builder.append(String.format(" |%" + colSize[j] + "s ", ""));
+                    }
+                }
+                builder.append('\n');
+            }
+
+            System.out.print(builder.toString());
         } else if (args[0].equalsIgnoreCase("pages")) {
             if (args.length > 2) {
                 return false;

@@ -60,7 +60,7 @@ CREATE TABLE `prices` (
 --
 
 CREATE TABLE `fuels` (
-  `id` TINYINT(2) UNSIGNED NOT NULL AUTO_INCREMENT,
+  `id` TINYINT(2) UNSIGNED NOT NULL,
   `name` varchar(64) NOT NULL,
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)
@@ -77,6 +77,8 @@ ALTER TABLE `prices`
   ADD CONSTRAINT `prices_pages_id_fk` FOREIGN KEY (`pageid`) REFERENCES `pages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `prices_fuel_id_fk` FOREIGN KEY (`fuelid`) REFERENCES `fuels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+INSERT INTO `fuels` (id, name)
+VALUES (0, 'Diesel'), (1, 'Benzin'), (2, 'Autogas');
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

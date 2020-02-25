@@ -6,7 +6,7 @@ import me.lyphium.pagepriceparser.utils.Utils;
 public class DelayCommand extends Command {
 
     public DelayCommand() {
-        super("delay", "Get or change update delay", "delay [Value]");
+        super("delay", "Get or change update delay", "delay [value]");
     }
 
     @Override

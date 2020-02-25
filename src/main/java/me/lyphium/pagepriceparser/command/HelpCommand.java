@@ -5,7 +5,7 @@ import java.util.Arrays;
 public class HelpCommand extends Command {
 
     public HelpCommand() {
-        super("help", "Lists all commands", "help [Command]", new String[]{"?"});
+        super("help", "Lists all commands", "help [command]", new String[]{"?"});
     }
 
     @Override

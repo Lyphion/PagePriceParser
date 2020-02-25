@@ -160,7 +160,9 @@ public class DatabaseConnection {
         }
 
         final String execute = String.format(
-                "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER('%s') LIMIT 1;",
+                "SELECT id, url, address FROM pages " +
+                        "WHERE LOWER(name) = LOWER('%s') " +
+                        "LIMIT 1;",
                 name
         );
 
@@ -168,7 +170,7 @@ public class DatabaseConnection {
         final ResultSet set = syncExecute(statement);
 
         try {
-            if (set.next()) {
+            if (!set.next()) {
                 return null;
             }
 
@@ -195,7 +197,9 @@ public class DatabaseConnection {
         }
 
         final String execute = String.format(
-                "SELECT name, url, address FROM pages WHERE id = %d LIMIT 1;",
+                "SELECT name, url, address FROM pages " +
+                        "WHERE id = %d " +
+                        "LIMIT 1;",
                 id
         );
 
@@ -235,8 +239,8 @@ public class DatabaseConnection {
                 "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
                         "FROM prices pr " +
                         "INNER JOIN pages pa on pr.pageid = pa.id " +
-                        "WHERE pr.fuelid = %d;",
-                fuel.getId()
+                        "WHERE pr.fuelid = %d AND pr.time >= '%s' AND pr.time <= '%s';",
+                fuel.getId(), begin, end
         );
 
         final PreparedStatement statement = createStatement(execute);
@@ -315,6 +319,62 @@ public class DatabaseConnection {
         return true;
     }
 
+    public boolean addPage(PriceData data) {
+        if (!isConnected()) {
+            System.err.println("No connection available");
+            return false;
+        }
+
+        if (getPriceData(data.getName(), new Timestamp(0), new Timestamp(0)) != null) {
+            return false;
+        }
+
+        final String update = String.format(
+                "INSERT INTO pages (name, url, address) " +
+                        "VALUES('%s', '%s', '%s');",
+                data.getName(), data.getUrl(), data.getAddress()
+        );
+
+        final PreparedStatement statement = createStatement(update);
+
+        update(statement);
+
+        return true;
+    }
+
+    public boolean removePage(PriceData data) {
+        if (!isConnected()) {
+            System.err.println("No connection available");
+            return false;
+        }
+
+        final String update;
+        if (data.getId() > -1) {
+            if (data.getName() != null) {
+                update = String.format(
+                        "DELETE FROM pages WHERE id = %d AND LOWER(name) = LOWER('%s');",
+                        data.getId(), data.getName()
+                );
+            } else {
+                update = String.format(
+                        "DELETE FROM pages WHERE id = %d;",
+                        data.getId()
+                );
+            }
+        } else if (data.getName() != null) {
+            update = String.format(
+                    "DELETE FROM pages WHERE LOWER(name) = LOWER('%s');",
+                    data.getName()
+            );
+        } else {
+            return false;
+        }
+
+        final PreparedStatement statement = createStatement(update);
+
+        return syncUpdate(statement) != 0;
+    }
+
     public boolean isConnected() {
         try {
             return con != null && !con.isClosed();
@@ -355,12 +415,14 @@ public class DatabaseConnection {
         return service.submit(() -> syncExecute(statement));
     }
 
-    private void syncUpdate(PreparedStatement statement) {
+    private int syncUpdate(PreparedStatement statement) {
         try {
-            statement.executeUpdate();
+            final int res = statement.executeUpdate();
             statement.close();
+            return res;
         } catch (SQLException e) {
             e.printStackTrace();
+            return 0;
         }
     }
 
