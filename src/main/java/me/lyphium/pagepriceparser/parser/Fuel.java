@@ -7,7 +7,7 @@ public enum Fuel {
     AUTOGAS;
 
     public String getName() {
-        return toString();
+        return name().substring(0, 1) + name().substring(1).toLowerCase();
     }
 
     public int getId() {
@@ -15,7 +15,7 @@ public enum Fuel {
     }
 
     public String toString() {
-        return name().substring(0, 1) + name().substring(1).toLowerCase();
+        return getName();
     }
 
     public static Fuel getByName(String name) {
@@ -27,7 +27,7 @@ public enum Fuel {
         return null;
     }
 
-    public static Fuel getByID(int id) {
+    public static Fuel getById(int id) {
         return id >= 0 && id < values().length ? values()[id] : null;
     }
 

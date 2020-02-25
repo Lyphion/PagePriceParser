@@ -31,20 +31,24 @@ public class PageParseThread extends Thread {
 
     @Override
     public void run() {
+        // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {
             try {
                 long time = System.currentTimeMillis();
 
+                // Checking if the connection to the database is available, otherwise don't update prices
                 if (!Bot.getInstance().getDatabase().isConnected()) {
                     System.err.println("Can't update database! No connection available");
                 } else {
                     System.out.println("Updating Prices...");
 
+                    // Update prices
                     update();
 
                     System.out.println("Finished: Updated the Prices (" + (System.currentTimeMillis() - time) + "ms)");
                 }
 
+                // Calculate sleeping time from delay
                 time = delay - (System.currentTimeMillis() - time);
                 if (time > 0) {
                     Thread.sleep(time);
@@ -60,27 +64,35 @@ public class PageParseThread extends Thread {
     public synchronized void update() {
         final DatabaseConnection database = Bot.getInstance().getDatabase();
 
+        // Checking if the connection to the database is available
         if (!database.isConnected()) {
             System.err.println("Can't update database! No connection available");
             return;
         }
 
+        // All available pages
         final List<PriceData> pages = database.getPages();
         final long time = System.currentTimeMillis();
 
+        // Nothing to update if no pages are available
         if (pages.isEmpty()) {
             return;
         }
 
         pages.parallelStream().forEach(page -> {
+            // Load HTML-Page
             final Document doc = loadPage(page.getUrl());
+
+            // Load Prices from page
             final Map<Fuel, Float> prices = loadPrices(doc);
 
+            // Check if prices exists (HTML-Page correct and prices exist)
             if (prices == null) {
                 System.err.println("Couldn't update prices for: " + page.getName());
                 return;
             }
 
+            // Apply prices to PriceData Object
             for (Entry<Fuel, Float> entry : prices.entrySet()) {
                 page.getPrices().put(
                         entry.getKey(),
@@ -89,6 +101,7 @@ public class PageParseThread extends Thread {
             }
         });
 
+        // Save prices in database
         database.savePriceData(pages);
     }
 
@@ -98,6 +111,7 @@ public class PageParseThread extends Thread {
 
     private Document loadPage(String url) {
         try {
+            // Load HTML-Page
             return Jsoup.connect(url).get();
         } catch (IOException e) {
             e.printStackTrace();
@@ -113,6 +127,7 @@ public class PageParseThread extends Thread {
         final Map<Fuel, Float> prices = new EnumMap<>(Fuel.class);
 
         try {
+            // Parsing pages based on the domain
             switch (Utils.getDomain(doc.baseUri())) {
                 case "clever-tanken.de":
                     final float dp = Float.parseFloat(doc.getElementById("current-price-1").html()) + 0.009F;
@@ -120,7 +135,7 @@ public class PageParseThread extends Thread {
 
                     prices.put(Fuel.DIESEL, Utils.round(dp, 3));
                     prices.put(Fuel.BENZIN, Utils.round(bp, 3));
-                    break;
+                    return prices;
                 case "find.shell.com":
                     final Element list = doc.selectFirst(".fuels");
 
@@ -138,15 +153,15 @@ public class PageParseThread extends Thread {
                             }
                         }
                     }
-                    break;
+                    return prices;
                 default:
-                    throw new UnsupportedOperationException("Page can't be parsed");
+                    System.err.println("Can't parse page: " + doc.baseUri());
+                    return null;
             }
         } catch (Exception e) {
             e.printStackTrace();
+            return null;
         }
-
-        return prices;
     }
 
 }

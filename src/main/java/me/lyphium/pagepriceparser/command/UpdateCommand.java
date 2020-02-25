@@ -16,6 +16,8 @@ public class UpdateCommand extends Command {
         }
 
         final Bot bot = Bot.getInstance();
+
+        // Checking if the connection to the database is available, otherwise can't update
         if (!bot.getDatabase().isConnected()) {
             System.err.println("No connection available");
             return true;
@@ -24,6 +26,7 @@ public class UpdateCommand extends Command {
         long time = System.currentTimeMillis();
         System.out.println("Updating Prices...");
 
+        // Update the pages
         bot.getParser().update();
 
         time = System.currentTimeMillis() - time;

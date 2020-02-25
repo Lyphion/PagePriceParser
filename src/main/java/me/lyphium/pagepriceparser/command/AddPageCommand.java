@@ -19,14 +19,19 @@ public class AddPageCommand extends Command {
 
         final DatabaseConnection database = Bot.getInstance().getDatabase();
 
+        // Checking if the connection to the database is available, otherwise can't add page
         if (!database.isConnected()) {
             System.err.println("No connection available");
             return true;
         }
 
+        // Create page based on input
         final PriceData data = new PriceData(-1, args[0], args[1], args[2]);
+
+        // Add page to database, success will be true, if the pages was added
         final boolean success = database.addPage(data);
 
+        // Check if page was added
         if (success) {
             System.out.println("New page added to database");
         } else {

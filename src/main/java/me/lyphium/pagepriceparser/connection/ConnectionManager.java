@@ -4,10 +4,10 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.connection.packet.DataPacket;
 import me.lyphium.pagepriceparser.connection.packet.DataRequestPacket;
 import me.lyphium.pagepriceparser.connection.packet.InvalidRequestPacket;
-import me.lyphium.pagepriceparser.utils.Packet;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.Packet;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -30,6 +30,7 @@ public class ConnectionManager extends Thread {
         this.port = port;
 
         try {
+            // Setting up SocketServer to receive Client requests
             server = new ServerSocket(port);
         } catch (IOException e) {
             System.err.println("Couldn't setup ServerSocket");
@@ -38,17 +39,26 @@ public class ConnectionManager extends Thread {
 
     @Override
     public void run() {
+        // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {
             try {
+                // Waiting for Client requests
                 final Socket socket = server.accept();
+
+                // Set maximum waiting time for input
                 socket.setSoTimeout(500);
                 final InputStream inputStream = socket.getInputStream();
                 final ObjectInputStream in = new ObjectInputStream(inputStream);
 
+                // Read Request
                 final Object obj = in.readObject();
 
+                // Check if the Request is a valid Packet
                 if (obj instanceof Packet) {
+                    // Handle Packet
                     final Packet result = handle((Packet) obj);
+
+                    // Send back Answer if needed
                     if (result != null) {
                         final OutputStream outputStream = socket.getOutputStream();
                         final ObjectOutputStream out = new ObjectOutputStream(outputStream);
@@ -56,6 +66,7 @@ public class ConnectionManager extends Thread {
                     }
                 }
 
+                // Close connection
                 socket.close();
             } catch (ClassNotFoundException | ObjectStreamException e) {
                 // Thrown when data is invalid or corrupted
@@ -74,6 +85,7 @@ public class ConnectionManager extends Thread {
         interrupt();
 
         try {
+            // Close ServerSocket
             server.close();
             server = null;
         } catch (IOException e) {
@@ -82,6 +94,8 @@ public class ConnectionManager extends Thread {
     }
 
     private Packet handle(Packet packet) {
+        // Handle each Packet differently
+
         if (packet instanceof DataRequestPacket) {
             final DataRequestPacket request = (DataRequestPacket) packet;
             final DatabaseConnection database = Bot.getInstance().getDatabase();
@@ -90,10 +104,12 @@ public class ConnectionManager extends Thread {
                 final RequestType[] types = request.getTypes();
                 final Object[] data = request.getData();
 
+                // Check if the Packet has data
                 if (types == null || types.length == 0) {
                     return new InvalidRequestPacket("Types must contain at least: id, name or fuel");
                 }
 
+                // Check if the types and data arrays have equal length
                 if (types.length != data.length) {
                     return new InvalidRequestPacket("Length of types and data must be equal");
                 }
@@ -104,6 +120,7 @@ public class ConnectionManager extends Thread {
                 long begin = 0;
                 long end = System.currentTimeMillis();
 
+                // Parse arguments by type
                 for (int i = 0; i < types.length; i++) {
                     final RequestType type = types[i];
 
@@ -120,11 +137,17 @@ public class ConnectionManager extends Thread {
                     }
                 }
 
+                // If id is set
                 if (id > -1) {
+                    // Get PriceData from database with id
                     final PriceData priceData = database.getPriceData(id, new Timestamp(begin), new Timestamp(end));
-                    if (!priceData.getName().equals(name)) {
+
+                    // Check if the given is equal with the request name
+                    if (name != null && !priceData.getName().equals(name)) {
                         return new InvalidRequestPacket("Name and id don't match");
                     }
+
+                    // Filter if fuel is set
                     if (fuel != null) {
                         final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
 
@@ -132,11 +155,19 @@ public class ConnectionManager extends Thread {
                             newPriceData.addPrice(fuel, entry.getKey(), entry.getValue());
                         }
 
+                        // Send back filtered PriceData
                         return new DataPacket(new ArrayList<>(Collections.singletonList(newPriceData)));
+                    } else {
+                        // Send back PriceData
+                        return new DataPacket(new ArrayList<>(Collections.singletonList(priceData)));
                     }
-                } else if (name != null) {
+                }
+                // If name is set and not id
+                else if (name != null) {
+                    // Get PriceData from database with name
                     final PriceData priceData = database.getPriceData(name, new Timestamp(begin), new Timestamp(end));
 
+                    // Filter if fuel is set
                     if (fuel != null) {
                         final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
 
@@ -144,13 +175,20 @@ public class ConnectionManager extends Thread {
                             newPriceData.addPrice(fuel, entry.getKey(), entry.getValue());
                         }
 
+                        // Send back filtered PriceData
                         return new DataPacket(new ArrayList<>(Collections.singletonList(newPriceData)));
+                    } else {
+                        // Send back PriceData
+                        return new DataPacket(new ArrayList<>(Collections.singletonList(priceData)));
                     }
                 } else if (fuel != null) {
+                    // Get List of PriceData from database with fuel
                     final List<PriceData> priceData = database.getPriceData(fuel, new Timestamp(begin), new Timestamp(end));
 
+                    // Send back List of PriceData
                     return new DataPacket(priceData);
                 } else {
+                    // Request must contain at least: id, name or fuel
                     return new InvalidRequestPacket("Types must contain at least: id, name or fuel");
                 }
             } catch (Exception e) {

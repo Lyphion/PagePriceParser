@@ -77,6 +77,11 @@ ALTER TABLE `prices`
   ADD CONSTRAINT `prices_pages_id_fk` FOREIGN KEY (`pageid`) REFERENCES `pages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `prices_fuel_id_fk` FOREIGN KEY (`fuelid`) REFERENCES `fuels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 COMMIT;
+
+
+--
+-- Default Values der Tabelle `fuels`
+--
 INSERT INTO `fuels` (id, name)
 VALUES (0, 'Diesel'), (1, 'Benzin'), (2, 'Autogas');
 

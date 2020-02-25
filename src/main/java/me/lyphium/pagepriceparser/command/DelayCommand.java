@@ -17,16 +17,23 @@ public class DelayCommand extends Command {
         }
 
         final Bot bot = Bot.getInstance();
+
+        // Check if only request or delay change
         if (args.length == 0) {
+            // Get current delay
             final long delay = bot.getParser().getDelay();
             System.out.println("Current delay: " + delay + "ms");
         } else {
             final long delay;
+
+            // Parse new delay as a number or time string
             if (args[0].matches("(\\d)+")) {
                 delay = Long.parseUnsignedLong(args[0]);
             } else {
                 delay = Utils.calculateDelay(args[0]);
             }
+
+            // Set new delay
             bot.getParser().setDelay(delay);
             System.out.println("New delay: " + delay + "ms");
         }

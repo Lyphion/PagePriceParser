@@ -19,28 +19,39 @@ public class RemovePageCommand extends Command {
 
         final DatabaseConnection database = Bot.getInstance().getDatabase();
 
+        // Checking if the connection to the database is available, otherwise can't remove page
         if (!database.isConnected()) {
             System.err.println("No connection available");
             return true;
         }
 
         final PriceData data;
+
+        // Parse input, check if first argument is a number
         if (args[0].matches("(\\d)+")) {
             final int id = Integer.parseUnsignedInt(args[0]);
             final String name;
+
+            //Check if second exists -> name
             if (args.length == 2) {
                 name = args[1];
             } else {
                 name = null;
             }
+
+            // Create Temp-PriceData
             data = new PriceData(id, name, null, null);
         } else {
             final String name = args[0];
+
+            // Create Temp-PriceData with name
             data = new PriceData(-1, name, null, null);
         }
 
+        // Remove page and data to database, success will be true, if the pages was removed
         final boolean success = database.removePage(data);
 
+        // Check if page and data was removed
         if (success) {
             System.out.println("Page and data removed from database");
         } else {

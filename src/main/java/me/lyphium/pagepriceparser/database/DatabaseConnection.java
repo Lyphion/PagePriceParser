@@ -39,7 +39,10 @@ public class DatabaseConnection {
         }
 
         try {
+            // Checking if the MySQL Driver is available
             Class.forName("com.mysql.cj.jdbc.Driver");
+
+            // Creating database connection
             this.con = DriverManager.getConnection(
                     String.format(
                             "jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin",
@@ -48,6 +51,7 @@ public class DatabaseConnection {
                     username, password
             );
 
+            // Creating async Threads if not already done
             if (service == null) {
                 service = Executors.newCachedThreadPool();
             }
@@ -71,11 +75,13 @@ public class DatabaseConnection {
         }
 
         try {
+            // Closing connection
             if (con != null) {
                 con.close();
                 con = null;
             }
 
+            // Stopping async Threads
             if (service != null) {
                 service.shutdown();
                 service = null;
@@ -139,7 +145,7 @@ public class DatabaseConnection {
 
         try {
             while (set.next()) {
-                final Fuel fuel = Fuel.getByID(set.getInt("fuelid"));
+                final Fuel fuel = Fuel.getById(set.getInt("fuelid"));
                 final long time = set.getTimestamp("time").getTime();
                 final float value = set.getFloat("value");
                 data.addPrice(fuel, time, value);
