@@ -1,6 +1,7 @@
 package me.lyphium.pagepriceparser.command;
 
 import me.lyphium.pagepriceparser.Bot;
+import me.lyphium.pagepriceparser.utils.Command;
 
 public class UpdateCommand extends Command {
 

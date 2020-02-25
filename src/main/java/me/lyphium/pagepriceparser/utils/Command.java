@@ -1,4 +1,4 @@
-package me.lyphium.pagepriceparser.command;
+package me.lyphium.pagepriceparser.utils;
 
 import lombok.Getter;
 
@@ -9,9 +9,9 @@ public abstract class Command {
 
     private static final List<Command> COMMANDS = new ArrayList<>();
 
-    protected final String name;
-    protected final String description;
-    protected final String usage;
+    private final String name;
+    private final String description;
+    private final String usage;
     private final String[] aliases;
 
     public Command(String name, String description, String usage, String[] aliases) {

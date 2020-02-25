@@ -1,4 +1,4 @@
-package me.lyphium.pagepriceparser.connection.packet;
+package me.lyphium.pagepriceparser.utils;
 
 import java.io.Serializable;
 

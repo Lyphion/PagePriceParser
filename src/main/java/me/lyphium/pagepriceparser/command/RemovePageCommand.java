@@ -3,6 +3,7 @@ package me.lyphium.pagepriceparser.command;
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.Command;
 
 public class RemovePageCommand extends Command {
 

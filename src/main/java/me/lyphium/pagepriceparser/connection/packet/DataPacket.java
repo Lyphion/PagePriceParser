@@ -1,6 +1,7 @@
 package me.lyphium.pagepriceparser.connection.packet;
 
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.Packet;
 
 import java.util.List;
 

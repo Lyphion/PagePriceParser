@@ -4,7 +4,7 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.connection.packet.DataPacket;
 import me.lyphium.pagepriceparser.connection.packet.DataRequestPacket;
 import me.lyphium.pagepriceparser.connection.packet.InvalidRequestPacket;
-import me.lyphium.pagepriceparser.connection.packet.Packet;
+import me.lyphium.pagepriceparser.utils.Packet;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;

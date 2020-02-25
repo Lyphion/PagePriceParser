@@ -37,19 +37,15 @@ public class PageParseThread extends Thread {
 
                 if (!Bot.getInstance().getDatabase().isConnected()) {
                     System.err.println("Can't update database! No connection available");
-
-                    time = delay;
                 } else {
                     System.out.println("Updating Prices...");
 
                     update();
 
-                    time = System.currentTimeMillis() - time;
-                    System.out.println("Finished: Updated the Prices (" + time + "ms)");
-
-                    time = delay - time;
+                    System.out.println("Finished: Updated the Prices (" + (System.currentTimeMillis() - time) + "ms)");
                 }
 
+                time = delay - (System.currentTimeMillis() - time);
                 if (time > 0) {
                     Thread.sleep(time);
                 }

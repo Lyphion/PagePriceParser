@@ -5,6 +5,7 @@ import me.lyphium.pagepriceparser.command.*;
 import me.lyphium.pagepriceparser.connection.ConnectionManager;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PageParseThread;
+import me.lyphium.pagepriceparser.utils.Command;
 import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.util.Scanner;

@@ -4,6 +4,7 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.Command;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;

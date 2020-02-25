@@ -1,6 +1,7 @@
 package me.lyphium.pagepriceparser.connection.packet;
 
 import me.lyphium.pagepriceparser.connection.RequestType;
+import me.lyphium.pagepriceparser.utils.Packet;
 
 public class DataRequestPacket extends Packet {
 
