@@ -130,29 +130,57 @@ public class PageParseThread extends Thread {
             // Parsing pages based on the domain
             switch (Utils.getDomain(doc.baseUri())) {
                 case "clever-tanken.de":
-                    final float dp = Float.parseFloat(doc.getElementById("current-price-1").html()) + 0.009F;
-                    final float bp = Float.parseFloat(doc.getElementById("current-price-2").html()) + 0.009F;
+                    final Element container = doc.selectFirst("#prices-container");
 
-                    prices.put(Fuel.DIESEL, Utils.round(dp, 3));
-                    prices.put(Fuel.BENZIN, Utils.round(bp, 3));
+                    for (Element row : container.select(".price-row")) {
+                        try {
+                            final String name = row.selectFirst(".price-type-name").html();
+                            final Fuel fuel = Fuel.getByName(name);
+                            if (fuel == null) {
+                                continue;
+                            }
+
+                            final Element priceField = row.selectFirst(".price-field");
+                            final String priceString = priceField.selectFirst("span").html();
+
+                            final float price = Float.parseFloat(priceString) + 0.009F;
+                            final float value = Utils.round(price, 3);
+
+                            prices.put(fuel, value);
+                        } catch (Exception e) {
+                            System.err.println("Error while parsing: " + doc.baseUri());
+                        }
+                    }
+
                     return prices;
                 case "find.shell.com":
                     final Element list = doc.selectFirst(".fuels");
 
                     for (Element element : list.select(".fuels__row")) {
-                        final Element nameElement = element.selectFirst(".fuels__row-type");
-                        if (nameElement != null) {
-                            final String name = nameElement.html();
-                            final String priceString = element.selectFirst(".fuels__row-price").html();
-                            final float price = Float.parseFloat(priceString.split("/")[0].substring(1));
-
-                            if (name.equals("Shell Diesel FuelSave")) {
-                                prices.put(Fuel.DIESEL, Utils.round(price, 3));
-                            } else if (name.equals("Shell Super FuelSave E10")) {
-                                prices.put(Fuel.BENZIN, Utils.round(price, 3));
+                        try {
+                            final Element nameElement = element.selectFirst(".fuels__row-type");
+                            if (nameElement == null) {
+                                continue;
                             }
+
+                            final String name = nameElement.html();
+                            final Fuel fuel = Fuel.getByName(name);
+                            if (fuel == null) {
+                                continue;
+                            }
+
+                            final Element priceField = element.selectFirst(".fuels__row-price");
+                            final String priceString = priceField.html().split("/", 2)[0].substring(1);
+
+                            final float price = Float.parseFloat(priceString);
+                            final float value = Utils.round(price, 3);
+
+                            prices.put(fuel, value);
+                        } catch (Exception e) {
+                            System.err.println("Error while parsing: " + doc.baseUri());
                         }
                     }
+
                     return prices;
                 default:
                     System.err.println("Can't parse page: " + doc.baseUri());

@@ -226,7 +226,6 @@ public class PrintCommand extends Command {
              *        |        |        |
              */
 
-
             // Calculation the first and last Price Entry
             long min = System.currentTimeMillis(), max = 0;
             boolean changed = false;

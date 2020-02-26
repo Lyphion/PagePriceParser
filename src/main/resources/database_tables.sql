@@ -13,9 +13,9 @@ START TRANSACTION;
 SET time_zone = "+00:00";
 
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT = @@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS = @@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION = @@COLLATION_CONNECTION */;
 /*!40101 SET NAMES utf8mb4 */;
 
 --
@@ -28,14 +28,16 @@ SET time_zone = "+00:00";
 -- Tabellenstruktur für Tabelle `pages`
 --
 
-CREATE TABLE `pages` (
-  `id` SMALLINT(4) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `name` varchar(128) NOT NULL,
-  `url` varchar(256) NOT NULL,
-  `address` varchar(256) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `pages`
+(
+    `id`      SMALLINT(4) UNSIGNED NOT NULL AUTO_INCREMENT,
+    `name`    varchar(128)         NOT NULL,
+    `url`     varchar(256)         NOT NULL,
+    `address` varchar(256)         NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `name` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
 
 -- --------------------------------------------------------
 
@@ -43,15 +45,17 @@ CREATE TABLE `pages` (
 -- Tabellenstruktur für Tabelle `prices`
 --
 
-CREATE TABLE `prices` (
-  `id` int(11) UNSIGNED NOT NULL AUTO_INCREMENT,
-  `pageid` SMALLINT(4) UNSIGNED NOT NULL,
-  `fuelid` TINYINT(2) UNSIGNED NOT NULL,
-  `time` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  `value` float NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `timeprice` (`pageid`,`fuelid`,`time`) USING BTREE
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `prices`
+(
+    `id`     int(11) UNSIGNED     NOT NULL AUTO_INCREMENT,
+    `pageid` SMALLINT(4) UNSIGNED NOT NULL,
+    `fuelid` TINYINT(2) UNSIGNED  NOT NULL,
+    `time`   timestamp            NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `value`  float                NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `timeprice` (`pageid`, `fuelid`, `time`) USING BTREE
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
 
 -- --------------------------------------------------------
 
@@ -59,12 +63,14 @@ CREATE TABLE `prices` (
 -- Tabellenstruktur für Tabelle `pricetypes`
 --
 
-CREATE TABLE `fuels` (
-  `id` TINYINT(2) UNSIGNED NOT NULL,
-  `name` varchar(64) NOT NULL,
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `name` (`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+CREATE TABLE `fuels`
+(
+    `id`   TINYINT(2) UNSIGNED NOT NULL,
+    `name` varchar(64)         NOT NULL,
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `name` (`name`)
+) ENGINE = InnoDB
+  DEFAULT CHARSET = utf8;
 
 --
 -- Constraints der exportierten Tabellen
@@ -74,17 +80,23 @@ CREATE TABLE `fuels` (
 -- Constraints der Tabelle `prices`
 --
 ALTER TABLE `prices`
-  ADD CONSTRAINT `prices_pages_id_fk` FOREIGN KEY (`pageid`) REFERENCES `pages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `prices_fuel_id_fk` FOREIGN KEY (`fuelid`) REFERENCES `fuels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-COMMIT;
-
+    ADD CONSTRAINT `prices_pages_id_fk` FOREIGN KEY (`pageid`) REFERENCES `pages` (`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+    ADD CONSTRAINT `prices_fuel_id_fk` FOREIGN KEY (`fuelid`) REFERENCES `fuels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Default Values der Tabelle `fuels`
 --
 INSERT INTO `fuels` (id, name)
-VALUES (0, 'Diesel'), (1, 'Benzin'), (2, 'Autogas');
+VALUES (0, 'Diesel'),
+       (1, 'LKW-Diesel'),
+       (2, 'Super E10'),
+       (3, 'Super E5'),
+       (4, 'Super 95'),
+       (5, 'SuperPlus'),
+       (6, 'Autogas');
 
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+COMMIT;
+
+/*!40101 SET CHARACTER_SET_CLIENT = @OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS = @OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION = @OLD_COLLATION_CONNECTION */;
