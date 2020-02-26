@@ -40,7 +40,7 @@ public class ConnectionManager extends Thread {
     @Override
     public void run() {
         // Checking if the bot is still running
-        while (Bot.getInstance().isRunning()) {
+        while (Bot.getInstance().isRunning() && isValid()) {
             try {
                 // Waiting for Client requests
                 final Socket socket = server.accept();

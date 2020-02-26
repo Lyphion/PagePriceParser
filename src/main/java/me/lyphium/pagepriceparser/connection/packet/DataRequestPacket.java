@@ -11,7 +11,6 @@ public class DataRequestPacket extends Packet {
     private final Object[] data;
 
     public DataRequestPacket(RequestType[] types, Object[] data) {
-        super(true);
         this.types = types;
         this.data = data;
     }

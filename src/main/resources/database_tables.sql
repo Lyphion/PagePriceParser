@@ -84,7 +84,7 @@ ALTER TABLE `prices`
     ADD CONSTRAINT `prices_fuel_id_fk` FOREIGN KEY (`fuelid`) REFERENCES `fuels` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Default Values der Tabelle `fuels`
+-- Defaults der Tabelle `fuels`
 --
 INSERT INTO `fuels` (id, name)
 VALUES (0, 'Diesel'),

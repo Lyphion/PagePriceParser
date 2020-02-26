@@ -9,7 +9,6 @@ public class InvalidRequestPacket extends Packet {
     private final String message;
 
     public InvalidRequestPacket(String message) {
-        super(false);
         this.message = message;
     }
 

@@ -155,14 +155,14 @@ public class PrintCommand extends Command {
             // Calculate column width
             for (int i = 0; i < fuels.size(); i++) {
                 final Fuel fuel = fuels.get(i);
-                colSize[i] = Math.max(7, fuel.toString().length());
+                colSize[i] = Math.max(7, fuel.getName().length());
             }
 
             // Table head
             builder.append("                Time");
             for (int i = 0; i < fuels.size(); i++) {
                 final Fuel fuel = fuels.get(i);
-                builder.append(" | ").append(String.format("%" + colSize[i] + "s", fuel.toString()));
+                builder.append(" | ").append(String.format("%" + colSize[i] + "s", fuel.getName()));
             }
             builder.append("\n");
 
