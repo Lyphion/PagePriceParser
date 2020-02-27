@@ -4,7 +4,9 @@ import lombok.experimental.UtilityClass;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -49,6 +51,40 @@ public class Utils {
     public float round(double value, int decimal) {
         final double pow = Math.pow(10, decimal);
         return (float) (Math.round(value * pow) / pow);
+    }
+
+    public String[] wordWrap(String input, int width) {
+        if (width < 1) {
+            width = 1;
+        }
+
+        if (input == null) {
+            return null;
+        } else if (input.trim().length() <= width) {
+            return new String[]{input.trim()};
+        }
+
+        final String[] words = input.trim().split("\\s");
+        final List<String> lines = new ArrayList<>();
+        final StringBuilder buf = new StringBuilder();
+
+        for (String word : words) {
+            if (buf.length() + 1 + word.length() > width) {
+                final String line = buf.toString().trim();
+                if (!line.isEmpty()) {
+                    lines.add(line);
+                }
+                buf.setLength(0);
+            }
+            buf.append(word).append(" ");
+        }
+
+        final String line = buf.toString().trim();
+        if (!line.isEmpty()) {
+            lines.add(line);
+        }
+
+        return lines.toArray(new String[0]);
     }
 
 }

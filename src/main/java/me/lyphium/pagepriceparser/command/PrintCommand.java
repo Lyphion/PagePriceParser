@@ -5,6 +5,7 @@ import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -164,7 +165,7 @@ public class PrintCommand extends Command {
                 final Fuel fuel = fuels.get(i);
                 builder.append(" | ").append(String.format("%" + colSize[i] + "s", fuel.getName()));
             }
-            builder.append("\n");
+            builder.append('\n');
 
             // Table separator
             builder.append(new String(new char[21]).replace('\0', '-'));
@@ -260,20 +261,40 @@ public class PrintCommand extends Command {
             }
 
             final int[] colSize = new int[data.size()];
+            final String[][] headLines = new String[data.size()][];
+            int maxHeadLines = 1;
 
             // Calculate column width
             for (int i = 0; i < data.size(); i++) {
                 final PriceData priceData = data.get(i);
-                colSize[i] = Math.max(7, priceData.getName().length());
+                headLines[i] = Utils.wordWrap(priceData.getName(), 15);
+
+                int len = 7;
+                for (String line : headLines[i]) {
+                    if (line.length() > len) {
+                        len = line.length();
+                    }
+                }
+
+                if (headLines[i].length > maxHeadLines) {
+                    maxHeadLines = headLines[i].length;
+                }
+
+                colSize[i] = len;
             }
 
             // Table head
-            builder.append("                Time");
-            for (int i = 0; i < data.size(); i++) {
-                final PriceData priceData = data.get(i);
-                builder.append(" | ").append(String.format("%" + colSize[i] + "s", priceData.getName()));
+            for (int i = 0; i < maxHeadLines; i++) {
+                builder.append(String.format("%20s", i == maxHeadLines - 1 ? "Time" : ""));
+                for (int j = 0; j < data.size(); j++) {
+                    final int dLines = maxHeadLines - headLines[j].length;
+
+                    builder.append(" | ").append(String.format(
+                            "%" + colSize[j] + "s", i >= dLines ? headLines[j][i - dLines] : "")
+                    );
+                }
+                builder.append('\n');
             }
-            builder.append("\n");
 
             // Table separator
             builder.append(new String(new char[21]).replace('\0', '-'));

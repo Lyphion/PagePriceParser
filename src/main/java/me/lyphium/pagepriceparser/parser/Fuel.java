@@ -36,7 +36,7 @@ public enum Fuel {
 
     public static Fuel getByName(String name) {
         for (Fuel fuel : values()) {
-            if (fuel.name().equalsIgnoreCase(name) || fuel.getName().equalsIgnoreCase(name)) {
+            if (name.equalsIgnoreCase(fuel.name()) || name.equalsIgnoreCase(fuel.getName())) {
                 return fuel;
             } else if (name.equalsIgnoreCase(fuel.getShellName()) || name.equalsIgnoreCase(fuel.getCleverName())) {
                 return fuel;
