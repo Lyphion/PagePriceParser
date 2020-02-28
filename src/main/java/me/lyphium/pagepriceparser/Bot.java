@@ -94,7 +94,7 @@ public class Bot {
         final Scanner scanner = new Scanner(System.in);
 
         String line;
-        while (running && scanner.hasNext()) {
+        while (running && scanner.hasNextLine()) {
             line = scanner.nextLine();
 
             // Checking if the bot should quit

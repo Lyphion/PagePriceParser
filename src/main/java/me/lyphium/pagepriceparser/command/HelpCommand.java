@@ -12,7 +12,7 @@ public class HelpCommand extends Command {
 
     @Override
     public boolean onCommand(String label, String[] args) {
-        final StringBuilder builder = new StringBuilder("-------- Help Page --------\n");
+        final StringBuilder builder = new StringBuilder("------------- Help Page -------------\n");
 
         // Check input length: 0 -> General Information; 1 -> Specific Information
         if (args.length == 0) {

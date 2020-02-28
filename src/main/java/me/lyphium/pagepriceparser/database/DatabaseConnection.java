@@ -132,15 +132,23 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String execute = String.format(
-                "SELECT p.fuelid, p.time, p.value " +
-                        "FROM prices p " +
-                        "INNER JOIN fuels f on p.fuelid = f.id " +
-                        "WHERE p.pageid = %d AND p.time >= '%s' AND p.time <= '%s';",
-                data.getId(), begin, end
-        );
+        final String execute = "SELECT p.fuelid, p.time, p.value " +
+                "FROM prices p " +
+                "INNER JOIN fuels f on p.fuelid = f.id " +
+                "WHERE p.pageid = ? AND p.time >= ? AND p.time <= ?;";
 
         final PreparedStatement statement = createStatement(execute);
+
+        try {
+            statement.setInt(1, data.getId());
+            statement.setTimestamp(2, begin);
+            statement.setTimestamp(3, end);
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            close(null, statement);
+            return false;
+        }
+
         final ResultSet set = syncExecute(statement);
 
         try {
@@ -165,14 +173,16 @@ public class DatabaseConnection {
             return null;
         }
 
-        final String execute = String.format(
-                "SELECT id, url, address FROM pages " +
-                        "WHERE LOWER(name) = LOWER('%s') " +
-                        "LIMIT 1;",
-                name
-        );
-
+        final String execute = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
         final PreparedStatement statement = createStatement(execute);
+
+        try {
+            statement.setString(1, name);
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            return null;
+        }
+
         final ResultSet set = syncExecute(statement);
 
         try {
@@ -202,14 +212,17 @@ public class DatabaseConnection {
             return null;
         }
 
-        final String execute = String.format(
-                "SELECT name, url, address FROM pages " +
-                        "WHERE id = %d " +
-                        "LIMIT 1;",
-                id
-        );
-
+        final String execute = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
         final PreparedStatement statement = createStatement(execute);
+
+        try {
+            statement.setInt(1, id);
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            close(null, statement);
+            return null;
+        }
+
         final ResultSet set = syncExecute(statement);
 
         try {
@@ -241,15 +254,22 @@ public class DatabaseConnection {
 
         final Map<Integer, PriceData> data = new HashMap<>();
 
-        final String execute = String.format(
-                "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
-                        "FROM prices pr " +
-                        "INNER JOIN pages pa on pr.pageid = pa.id " +
-                        "WHERE pr.fuelid = %d AND pr.time >= '%s' AND pr.time <= '%s';",
-                fuel.getId(), begin, end
-        );
+        final String execute = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
+                "FROM prices pr INNER JOIN pages pa on pr.pageid = pa.id " +
+                "WHERE pr.fuelid = ? AND pr.time >= ? AND pr.time <= ?;";
 
         final PreparedStatement statement = createStatement(execute);
+
+        try {
+            statement.setInt(1, fuel.getId());
+            statement.setTimestamp(2, begin);
+            statement.setTimestamp(3, end);
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            close(null, statement);
+            return null;
+        }
+
         final ResultSet set = syncExecute(statement);
 
         try {
@@ -292,37 +312,48 @@ public class DatabaseConnection {
             return false;
         }
 
-        final List<String> priceData = new ArrayList<>();
-        for (PriceData pd : data) {
-            for (Entry<Fuel, Map<Long, Float>> fuelsEntry : pd.getPrices().entrySet()) {
-                for (Entry<Long, Float> timeEntry : fuelsEntry.getValue().entrySet()) {
-                    final String value = String.format(
-                            "(%d, %d, '%s', %s)",
-                            pd.getId(), fuelsEntry.getKey().getId(), new Timestamp(timeEntry.getKey()), toStringData(timeEntry.getValue())
-                    );
+        final long count = data.stream().mapToLong(pd -> pd.getPrices().values().size()).sum();
 
-                    priceData.add(value);
-                }
-            }
-        }
-
-        if (priceData.isEmpty()) {
+        if (count == 0) {
             return true;
         }
 
-        final String values = String.join(", ", priceData);
-        final String update = String.format(
-                "INSERT INTO prices (pageid, fuelid, time, value) " +
-                        "VALUES %s " +
-                        "ON DUPLICATE KEY UPDATE value = VALUES(value);",
-                values
-        );
+        final String update = "INSERT INTO prices (pageid, fuelid, time, value) " +
+                "VALUES (?, ?, ?, ?) " +
+                "ON DUPLICATE KEY UPDATE value = VALUES(value);";
 
         final PreparedStatement statement = createStatement(update);
 
-        update(statement);
+        try {
+            long i = 0;
+            final Timestamp time = new Timestamp(0);
+            for (PriceData pd : data) {
+                for (Entry<Fuel, Map<Long, Float>> fuelsEntry : pd.getPrices().entrySet()) {
+                    for (Entry<Long, Float> timeEntry : fuelsEntry.getValue().entrySet()) {
+                        time.setTime(timeEntry.getKey());
 
-        return true;
+                        statement.setInt(1, pd.getId());
+                        statement.setInt(2, fuelsEntry.getKey().getId());
+                        statement.setTimestamp(3, time);
+                        statement.setFloat(4, timeEntry.getValue());
+
+                        statement.addBatch();
+                        i++;
+
+                        if (i % 1000 == 0 || i == count) {
+                            syncExecuteBatch(statement);
+                        }
+                    }
+                }
+            }
+
+            return true;
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            return false;
+        } finally {
+            close(null, statement);
+        }
     }
 
     public boolean addPage(PriceData data) {
@@ -335,13 +366,18 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String update = String.format(
-                "INSERT INTO pages (name, url, address) " +
-                        "VALUES('%s', '%s', '%s');",
-                data.getName(), data.getUrl(), data.getAddress()
-        );
-
+        final String update = "INSERT INTO pages (name, url, address) VALUES(?, ?, ?);";
         final PreparedStatement statement = createStatement(update);
+
+        try {
+            statement.setString(1, data.getName());
+            statement.setString(2, data.getUrl());
+            statement.setString(3, data.getAddress());
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            close(null, statement);
+            return false;
+        }
 
         update(statement);
 
@@ -357,26 +393,31 @@ public class DatabaseConnection {
         final String update;
         if (data.getId() > -1) {
             if (data.getName() != null) {
-                update = String.format(
-                        "DELETE FROM pages WHERE id = %d AND LOWER(name) = LOWER('%s');",
-                        data.getId(), data.getName()
-                );
+                update = "DELETE FROM pages WHERE id = %d AND LOWER(name) = LOWER(?);";
             } else {
-                update = String.format(
-                        "DELETE FROM pages WHERE id = %d;",
-                        data.getId()
-                );
+                update = "DELETE FROM pages WHERE id = ?;";
             }
         } else if (data.getName() != null) {
-            update = String.format(
-                    "DELETE FROM pages WHERE LOWER(name) = LOWER('%s');",
-                    data.getName()
-            );
+            update = "DELETE FROM pages WHERE LOWER(name) = LOWER(?);";
         } else {
             return false;
         }
 
         final PreparedStatement statement = createStatement(update);
+
+        try {
+            int i = 1;
+            if (data.getId() > -1) {
+                statement.setInt(i++, data.getId());
+            }
+            if (data.getName() != null) {
+                statement.setString(i, data.getName());
+            }
+        } catch (SQLException e) {
+            System.err.println("Invalid parameter: " + e.getMessage());
+            close(null, statement);
+            return false;
+        }
 
         return syncUpdate(statement) != 0;
     }
@@ -434,6 +475,24 @@ public class DatabaseConnection {
 
     private void update(PreparedStatement statement) {
         service.execute(() -> syncUpdate(statement));
+    }
+
+    private int[] syncExecuteBatch(PreparedStatement statement) {
+        if (!isConnected()) {
+            System.err.println("No connection available");
+            return null;
+        }
+
+        try {
+            return statement.executeBatch();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private void executebatch(PreparedStatement statement) {
+        service.execute(() -> syncExecuteBatch(statement));
     }
 
     private void close(ResultSet set, PreparedStatement statement) {
