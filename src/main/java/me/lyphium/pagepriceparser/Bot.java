@@ -4,7 +4,7 @@ import lombok.Getter;
 import me.lyphium.pagepriceparser.command.*;
 import me.lyphium.pagepriceparser.connection.ConnectionManager;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
-import me.lyphium.pagepriceparser.parser.PageParseThread;
+import me.lyphium.pagepriceparser.parser.PageParser;
 import me.lyphium.pagepriceparser.utils.Command;
 import me.lyphium.pagepriceparser.utils.Utils;
 
@@ -17,7 +17,7 @@ public class Bot {
     private static Bot instance;
 
     private boolean running;
-    private PageParseThread parser;
+    private PageParser parser;
     private DatabaseConnection database;
     private ConnectionManager connectionManager;
 
@@ -34,12 +34,13 @@ public class Bot {
         int port = 14703;
         for (int i = 0; i < args.length; i++) {
             final String part = args[i];
+
             // Parsing the delay time between checks
             if (part.equals("-d") && i < args.length - 1) {
                 delay = Utils.calculateDelay(args[i + 1]);
             }
             // Parsing the Client Connection port
-            if (part.equals("-p") && i < args.length - 1) {
+            else if (part.equals("-p") && i < args.length - 1) {
                 if (args[i + 1].matches("(\\d){1,5}")) {
                     port = Integer.parseUnsignedInt(args[i + 1]);
                 }
@@ -50,7 +51,7 @@ public class Bot {
         this.database = new DatabaseConnection("127.0.0.1", 3306, "FuelPrices", "root", "");
 
         // Creating Parse Thread
-        this.parser = new PageParseThread(delay);
+        this.parser = new PageParser(delay);
 
         // Creating Client Managager
         this.connectionManager = new ConnectionManager(port);
@@ -68,9 +69,10 @@ public class Bot {
         // Starting Parse Thread
         parser.start();
 
-        //Starting Client Managager
+        // Starting Client Managager
         connectionManager.start();
 
+        // Handle Console commands
         handleInput();
     }
 
@@ -88,6 +90,8 @@ public class Bot {
 
         // Shutting down Client Manager
         connectionManager.cancel();
+
+        System.out.println("Goodbye. See you soon! c:");
     }
 
     private void handleInput() {

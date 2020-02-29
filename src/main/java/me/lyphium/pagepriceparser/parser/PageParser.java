@@ -16,13 +16,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-public class PageParseThread extends Thread {
+public class PageParser extends Thread {
 
     @Getter
     @Setter
     private long delay;
 
-    public PageParseThread(long delay) {
+    public PageParser(long delay) {
         this.delay = delay;
 
         setName("PageParser");
@@ -31,6 +31,8 @@ public class PageParseThread extends Thread {
 
     @Override
     public void run() {
+        System.out.println("Started Page Parser");
+
         // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {
             try {
@@ -107,6 +109,8 @@ public class PageParseThread extends Thread {
 
     public synchronized void cancel() {
         interrupt();
+
+        System.out.println("Shut down Page Parser");
     }
 
     private Document loadPage(String url) {

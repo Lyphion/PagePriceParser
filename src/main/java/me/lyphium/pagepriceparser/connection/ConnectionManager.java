@@ -31,14 +31,19 @@ public class ConnectionManager extends Thread {
 
         try {
             // Setting up SocketServer to receive Client requests
-            server = new ServerSocket(port);
+            this.server = new ServerSocket(port);
         } catch (IOException e) {
             System.err.println("Couldn't setup ServerSocket");
         }
+
+        setName("ConnectionManager");
+        setDaemon(true);
     }
 
     @Override
     public void run() {
+        System.out.println("Started Client Manager");
+
         // Checking if the bot is still running
         while (Bot.getInstance().isRunning() && isValid()) {
             try {
@@ -88,8 +93,10 @@ public class ConnectionManager extends Thread {
             // Close ServerSocket
             server.close();
             server = null;
+
+            System.out.println("Shut down Client Manager");
         } catch (IOException e) {
-            e.printStackTrace();
+            System.err.println("Error while shutting down Client Manager");
         }
     }
 

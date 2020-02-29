@@ -393,7 +393,7 @@ public class DatabaseConnection {
         final String update;
         if (data.getId() > -1) {
             if (data.getName() != null) {
-                update = "DELETE FROM pages WHERE id = %d AND LOWER(name) = LOWER(?);";
+                update = "DELETE FROM pages WHERE id = ? AND LOWER(name) = LOWER(?);";
             } else {
                 update = "DELETE FROM pages WHERE id = ?;";
             }

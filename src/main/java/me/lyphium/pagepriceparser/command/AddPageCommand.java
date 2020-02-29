@@ -5,6 +5,8 @@ import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
 
+import java.net.URL;
+
 public class AddPageCommand extends Command {
 
     public AddPageCommand() {
@@ -22,6 +24,13 @@ public class AddPageCommand extends Command {
         // Checking if the connection to the database is available, otherwise can't add page
         if (!database.isConnected()) {
             System.err.println("No connection available");
+            return true;
+        }
+
+        try {
+            new URL(args[1]).toURI();
+        } catch (Exception e) {
+            System.err.println("No a valid url!");
             return true;
         }
 
