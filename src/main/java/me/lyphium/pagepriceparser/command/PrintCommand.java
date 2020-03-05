@@ -5,10 +5,12 @@ import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.PriceMap;
 import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,29 +40,19 @@ public class PrintCommand extends Command {
 
         // Parse begin and end time
         if (args.length > 2) {
-            // Parse begin time as a number or time string
-            if (args[2].matches("(\\d)+")) {
-                begin = new Timestamp(Long.parseUnsignedLong(args[2]));
-            } else {
-                try {
-                    begin = Timestamp.valueOf(args[2]);
-                } catch (Exception e) {
-                    System.err.println("Invalid time format: 'milliseconds' or 'yyyy-[m]m-[d]d hh:mm:ss'");
-                    return true;
-                }
+            begin = Utils.toTimestamp(args[2]);
+
+            if (begin == null) {
+                System.err.println("Invalid time format: 'milliseconds' or 'yyyy-[m]m-[d]d hh:mm:ss'");
+                return true;
             }
 
             if (args.length > 3) {
-                // Parse end time as a number or time string
-                if (args[3].matches("(\\d)+")) {
-                    end = new Timestamp(Long.parseUnsignedLong(args[3]));
-                } else {
-                    try {
-                        end = Timestamp.valueOf(args[2]);
-                    } catch (Exception e) {
-                        System.err.println("Invalid time format: 'milliseconds' or 'yyyy-[m]m-[d]d hh:mm:ss'");
-                        return true;
-                    }
+                end = Utils.toTimestamp(args[3]);
+
+                if (begin == null) {
+                    System.err.println("Invalid time format: 'milliseconds' or 'yyyy-[m]m-[d]d hh:mm:ss'");
+                    return true;
                 }
             }
         }
@@ -111,12 +103,12 @@ public class PrintCommand extends Command {
              */
 
             // Price Informations by Fuel and Time
-            final Map<Fuel, Map<Long, Float>> prices = data.getPrices();
+            final Map<Fuel, PriceMap> prices = data.getPrices();
 
             // Calculation the first and last Price Entry
             long min = System.currentTimeMillis(), max = 0;
             boolean changed = false;
-            for (Map<Long, Float> map : prices.values()) {
+            for (PriceMap map : prices.values()) {
                 for (long l : map.keySet()) {
                     if (l < min) {
                         min = l;
@@ -140,8 +132,8 @@ public class PrintCommand extends Command {
             builder.append(String.format("URL:     %s\n", data.getUrl()));
             builder.append(String.format("Address: %s\n", data.getAddress()));
 
-            builder.append(String.format("Begin:   %s\n", toString(begin)));
-            builder.append(String.format("End:     %s\n\n", toString(end)));
+            builder.append(String.format("Begin:   %s\n", Utils.toString(begin)));
+            builder.append(String.format("End:     %s\n\n", Utils.toString(end)));
 
             // Check if PriceData contains Price Information
             if (!changed) {
@@ -176,12 +168,15 @@ public class PrintCommand extends Command {
 
             // Collecting all available time entries
             final Timestamp time = new Timestamp(0);
-            final List<Long> times = prices.values().parallelStream().flatMap(m -> m.keySet().stream()).distinct().sorted().collect(Collectors.toList());
+            final List<Long> times = prices.values().parallelStream()
+                    .flatMapToLong(m -> Arrays.stream(m.keySet()))
+                    .distinct().sorted().boxed()
+                    .collect(Collectors.toList());
 
             // Table body
             for (long l : times) {
                 time.setTime(l);
-                builder.append(String.format(" %s", toString(time)));
+                builder.append(String.format(" %s", Utils.toString(time)));
 
                 for (int j = 0; j < fuels.size(); j++) {
                     final Fuel fuel = fuels.get(j);
@@ -250,8 +245,8 @@ public class PrintCommand extends Command {
             // Building the head of the Information page
             final StringBuilder builder = new StringBuilder("--------- Fuel Information ---------\n");
             builder.append(String.format("Fuel:  %s\n", fuel.getName()));
-            builder.append(String.format("Begin: %s\n", toString(begin)));
-            builder.append(String.format("End:   %s\n\n", toString(end)));
+            builder.append(String.format("Begin: %s\n", Utils.toString(begin)));
+            builder.append(String.format("End:   %s\n\n", Utils.toString(end)));
 
             // Check if List of PriceData contains Price Information
             if (!changed) {
@@ -305,12 +300,15 @@ public class PrintCommand extends Command {
 
             // Collecting all available time entries
             final Timestamp time = new Timestamp(0);
-            final List<Long> times = data.parallelStream().flatMap(m -> m.getPrices(fuel).keySet().stream()).distinct().sorted().collect(Collectors.toList());
+            final List<Long> times = data.parallelStream()
+                    .flatMapToLong(m -> Arrays.stream(m.getPrices(fuel).keySet()))
+                    .distinct().sorted().boxed()
+                    .collect(Collectors.toList());
 
             // Table body
             for (long l : times) {
                 time.setTime(l);
-                builder.append(String.format(" %s", toString(time)));
+                builder.append(String.format(" %s", Utils.toString(time)));
 
                 for (int j = 0; j < data.size(); j++) {
                     final PriceData priceData = data.get(j);
@@ -373,14 +371,8 @@ public class PrintCommand extends Command {
             return false;
         }
 
+        System.gc();
         return true;
-    }
-
-    private String toString(Timestamp time) {
-        final String s = time.toString();
-        final int index = s.lastIndexOf('.');
-
-        return index == -1 ? s : s.substring(0, index);
     }
 
 }

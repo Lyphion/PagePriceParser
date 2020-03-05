@@ -4,10 +4,9 @@ import lombok.experimental.UtilityClass;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.sql.Timestamp;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -15,7 +14,9 @@ import java.util.regex.Pattern;
 @UtilityClass
 public class Utils {
 
-    private final Map<String, Long> DELAY_TABLE = new HashMap<String, Long>() {{
+    private final SimpleDateFormat format = new SimpleDateFormat("dd.MM.YYYY HH:mm:ss");
+
+    private final Map<String, Long> delayTable = new HashMap<String, Long>() {{
         put("[\\d]+(?=s)", 1L);
         put("[\\d]+(?=m)", 60L);
         put("[\\d]+(?=h)", 3600L);
@@ -25,7 +26,7 @@ public class Utils {
     public long calculateDelay(String s) {
         try {
             long delay = 0;
-            for (Entry<String, Long> entry : DELAY_TABLE.entrySet()) {
+            for (Entry<String, Long> entry : delayTable.entrySet()) {
                 Pattern p = Pattern.compile(entry.getKey());
                 Matcher m = p.matcher(s);
 
@@ -85,6 +86,21 @@ public class Utils {
         }
 
         return lines.toArray(new String[0]);
+    }
+
+    public Timestamp toTimestamp(String s) {
+        if (s.matches("(\\d)+")) {
+            return new Timestamp(Long.parseUnsignedLong(s));
+        }
+        try {
+            return Timestamp.valueOf(s);
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public String toString(Date date) {
+        return format.format(date);
     }
 
 }

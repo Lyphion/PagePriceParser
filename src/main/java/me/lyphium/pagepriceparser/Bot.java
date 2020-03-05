@@ -122,6 +122,7 @@ public class Bot {
         // Register all commands
         Command.registerCommand(new AddPageCommand());
         Command.registerCommand(new DelayCommand());
+        Command.registerCommand(new GraphCommand());
         Command.registerCommand(new HelpCommand());
         Command.registerCommand(new PrintCommand());
         Command.registerCommand(new RemovePageCommand());

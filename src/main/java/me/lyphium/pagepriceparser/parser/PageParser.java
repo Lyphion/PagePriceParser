@@ -4,13 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
+import me.lyphium.pagepriceparser.utils.PriceMap;
 import me.lyphium.pagepriceparser.utils.Utils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -98,13 +98,14 @@ public class PageParser extends Thread {
             for (Entry<Fuel, Float> entry : prices.entrySet()) {
                 page.getPrices().put(
                         entry.getKey(),
-                        Collections.singletonMap(time, entry.getValue())
+                        new PriceMap(new long[]{time}, new float[]{entry.getValue()})
                 );
             }
         });
 
         // Save prices in database
         database.savePriceData(pages);
+        System.gc();
     }
 
     public synchronized void cancel() {

@@ -1,8 +1,10 @@
 package me.lyphium.pagepriceparser.database;
 
 import lombok.Getter;
+import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.PriceMap;
 
 import java.sql.*;
 import java.util.Date;
@@ -23,6 +25,7 @@ public class DatabaseConnection {
 
     private ExecutorService service;
     private Connection con;
+    private Thread reconnectThread;
 
     public DatabaseConnection(String host, int port, String database, String username, String password) {
         this.host = host;
@@ -39,6 +42,17 @@ public class DatabaseConnection {
         }
 
         try {
+            // Creating async Threads if not already done
+            if (service == null) {
+                service = Executors.newCachedThreadPool();
+            }
+
+            // Starting AutoReconnectThread
+            if (reconnectThread != null) {
+                reconnectThread.interrupt();
+            }
+            checkConnection();
+
             // Checking if the MySQL Driver is available
             Class.forName("com.mysql.cj.jdbc.Driver");
 
@@ -51,16 +65,10 @@ public class DatabaseConnection {
                     username, password
             );
 
-            // Creating async Threads if not already done
-            if (service == null) {
-                service = Executors.newCachedThreadPool();
-            }
-
             System.out.println("Connected to database");
             return true;
         } catch (SQLException e) {
             System.err.println("Couldn't connect to database");
-            e.printStackTrace();
             return false;
         } catch (ClassNotFoundException e) {
             System.err.println("No MySQL driver found");
@@ -87,11 +95,53 @@ public class DatabaseConnection {
                 service = null;
             }
 
+            // Stopping ReconnectThread
+            if (reconnectThread != null) {
+                reconnectThread.interrupt();
+                reconnectThread = null;
+            }
+
             System.out.println("Disconnected from database");
             return true;
         } catch (SQLException e) {
             System.err.println("Error while disconnecting from database");
             return false;
+        }
+    }
+
+    private void checkConnection() {
+        // Check if the connection to the database is lost -> reconnect
+        this.reconnectThread = new Thread(() -> {
+            while (Bot.getInstance().isRunning()) {
+                try {
+                    Thread.sleep(5 * 60 * 1000);
+                    reconnect();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
+        reconnectThread.start();
+    }
+
+    private void reconnect() {
+        try {
+            if (con != null && con.isValid(5)) {
+                return;
+            }
+
+            this.con = DriverManager.getConnection(
+                    String.format(
+                            "jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin",
+                            host, port, database
+                    ),
+                    username, password
+            );
+            System.out.println("Reconnected to database");
+        } catch (SQLException e) {
+            if (Bot.getInstance().isRunning()) {
+                System.err.println("Error while reconnecting to database");
+            }
         }
     }
 
@@ -328,14 +378,15 @@ public class DatabaseConnection {
             long i = 0;
             final Timestamp time = new Timestamp(0);
             for (PriceData pd : data) {
-                for (Entry<Fuel, Map<Long, Float>> fuelsEntry : pd.getPrices().entrySet()) {
-                    for (Entry<Long, Float> timeEntry : fuelsEntry.getValue().entrySet()) {
-                        time.setTime(timeEntry.getKey());
+                for (Entry<Fuel, PriceMap> fuelsEntry : pd.getPrices().entrySet()) {
+                    final PriceMap priceMap = fuelsEntry.getValue();
+                    for (long t : priceMap.keySet()) {
+                        time.setTime(t);
 
                         statement.setInt(1, pd.getId());
                         statement.setInt(2, fuelsEntry.getKey().getId());
                         statement.setTimestamp(3, time);
-                        statement.setFloat(4, timeEntry.getValue());
+                        statement.setFloat(4, priceMap.get(t));
 
                         statement.addBatch();
                         i++;

@@ -1,6 +1,7 @@
 package me.lyphium.pagepriceparser.parser;
 
 import lombok.Getter;
+import me.lyphium.pagepriceparser.utils.PriceMap;
 
 import java.io.Serializable;
 import java.util.EnumMap;
@@ -18,9 +19,9 @@ public class PriceData implements Serializable {
     private final String url;
     private final String address;
 
-    private final Map<Fuel, Map<Long, Float>> prices;
+    private final Map<Fuel, PriceMap> prices;
 
-    public PriceData(int id, String name, String url, String address, Map<Fuel, Map<Long, Float>> prices) {
+    public PriceData(int id, String name, String url, String address, Map<Fuel, PriceMap> prices) {
         this.id = id;
         this.name = name;
         this.url = url;
@@ -35,7 +36,7 @@ public class PriceData implements Serializable {
     public Map<Fuel, Float> getPrices(long time) {
         final Map<Fuel, Float> prices = new HashMap<>();
 
-        for (Entry<Fuel, Map<Long, Float>> entry : this.prices.entrySet()) {
+        for (Entry<Fuel, PriceMap> entry : this.prices.entrySet()) {
             if (entry.getValue().containsKey(time)) {
                 prices.put(entry.getKey(), entry.getValue().get(time));
             }
@@ -44,7 +45,7 @@ public class PriceData implements Serializable {
         return prices;
     }
 
-    public Map<Long, Float> getPrices(Fuel fuel) {
+    public PriceMap getPrices(Fuel fuel) {
         return prices.get(fuel);
     }
 
@@ -61,7 +62,7 @@ public class PriceData implements Serializable {
 
     public void addPrice(Fuel fuel, long time, float value) {
         if (!prices.containsKey(fuel)) {
-            prices.put(fuel, new HashMap<>());
+            prices.put(fuel, new PriceMap());
         }
         prices.get(fuel).put(time, value);
     }

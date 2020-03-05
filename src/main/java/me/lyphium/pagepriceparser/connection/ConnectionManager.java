@@ -8,6 +8,7 @@ import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Packet;
+import me.lyphium.pagepriceparser.utils.PriceMap;
 
 import java.io.*;
 import java.net.ServerSocket;
@@ -18,7 +19,6 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map.Entry;
 
 public class ConnectionManager extends Thread {
 
@@ -157,9 +157,10 @@ public class ConnectionManager extends Thread {
                     // Filter if fuel is set
                     if (fuel != null) {
                         final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
+                        final PriceMap prices = priceData.getPrices(fuel);
 
-                        for (Entry<Long, Float> entry : priceData.getPrices(fuel).entrySet()) {
-                            newPriceData.addPrice(fuel, entry.getKey(), entry.getValue());
+                        for (int i = 0; i < prices.size(); i++) {
+                            newPriceData.addPrice(fuel,prices.getKey(i), prices.get(i));
                         }
 
                         // Send back filtered PriceData
@@ -177,9 +178,10 @@ public class ConnectionManager extends Thread {
                     // Filter if fuel is set
                     if (fuel != null) {
                         final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
+                        final PriceMap prices = priceData.getPrices(fuel);
 
-                        for (Entry<Long, Float> entry : priceData.getPrices(fuel).entrySet()) {
-                            newPriceData.addPrice(fuel, entry.getKey(), entry.getValue());
+                        for (int i = 0; i < prices.size(); i++) {
+                            newPriceData.addPrice(fuel,prices.getKey(i), prices.get(i));
                         }
 
                         // Send back filtered PriceData
