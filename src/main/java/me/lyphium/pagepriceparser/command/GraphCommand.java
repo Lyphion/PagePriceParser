@@ -20,7 +20,7 @@ import java.util.Map.Entry;
 public class GraphCommand extends Command {
 
     public GraphCommand() {
-        super("graph", "Create a graph of the prices", "graph <id/name> <value> <file> [begin] [end]");
+        super("graph", "Create a graph of the prices", "graph <id/name/fuel> <value> <file> [begin] [end]");
     }
 
     @Override
@@ -140,6 +140,8 @@ public class GraphCommand extends Command {
             image.draw();
             image.export();
             image.free();
+        } else {
+            return false;
         }
 
         System.gc();

@@ -31,7 +31,13 @@ public class PageParser extends Thread {
 
     @Override
     public void run() {
+        if (delay < 0) {
+            System.out.println("Automatic Page Parser disabled");
+            return;
+        }
+
         System.out.println("Started Page Parser");
+        System.out.println("Checking Pages every " + (delay / 1000) + "sec");
 
         // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {

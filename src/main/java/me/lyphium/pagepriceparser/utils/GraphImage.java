@@ -108,11 +108,13 @@ public class GraphImage {
         final float stepValue = 0.1f;
         final float stepPos = (GRAPH_MAX_Y - GRAPH_MIN_Y) / (dif / stepValue);
 
-        // Draw Horizontal lines and prices
+        // Draw horizontal lines and prices
         for (short i = 1; GRAPH_MAX_Y - i * stepPos > GRAPH_MIN_Y; i++) {
+            // Calculate Value and Position
             final float value = minValue + i * stepValue;
             final int posY = (int) (GRAPH_MAX_Y - i * stepPos);
 
+            // Draw horizontal line and price
             drawLine(GRAPH_MIN_X, posY, GRAPH_MAX_X, posY, 1, LIGHT_GRAY);
             drawText(GRAPH_MIN_X - 10, posY + 5, String.format("%.2f€", value), ASBESTOS, BOLD_ITALIC, 14, Alignment.RIGHT);
         }
@@ -121,11 +123,14 @@ public class GraphImage {
         int i = 0;
         final int infoOffset = (GRAPH_MAX_X - GRAPH_MIN_X) / data.size();
         for (Entry<String, PriceMap> entry : data.entrySet()) {
+            // Create random bright Color
             final Color color = randomColor();
 
+            // Map Graphpoints
             final int[] x = mapXValues(entry.getValue().keySet(), minTime, maxTime);
             final int[] y = mapYValues(entry.getValue().values(), minValue, maxValue);
 
+            // Map Graphpoints with steps
 //            final int[] tempX = mapXValues(entry.getValue().keySet(), minTime, maxTime);
 //            final int[] tempY = mapYValues(entry.getValue().values(), minValue, maxValue);
 //
@@ -133,6 +138,7 @@ public class GraphImage {
 //            final int[] y = new int[tempY.length * 2 - 1];
 //            createSteps(tempX, x, tempY, y);
 
+            // Calculate Minimum and Maximum
             final int min = Arrays.stream(y).min().orElse(0);
             final int max = Arrays.stream(y).max().orElse(0);
 
@@ -163,16 +169,6 @@ public class GraphImage {
         } else {
             gc.fillRect(posX, posY, width, height);
         }
-    }
-
-    private void drawCircle(int centerX, int centerY, int diameter, Paint paint) {
-        drawOval(centerX, centerY, diameter, diameter, paint);
-    }
-
-    private void drawOval(int centerX, int centerY, int width, int height, Paint paint) {
-        gc.setPaint(paint);
-
-        gc.fillOval(centerX - width / 2, centerY - height / 2, width, height);
     }
 
     private void drawLine(int startX, int startY, int endX, int endY, float width, Paint paint) {
@@ -228,10 +224,6 @@ public class GraphImage {
         return new GradientPaint(0, minY, color.brighter(), 0, maxY, color.darker());
     }
 
-    private GradientPaint horizontalGradient(Color color, int minX, int maxX) {
-        return new GradientPaint(minX, 0, color.brighter(), maxX, 0, color.darker());
-    }
-
     private Color randomColor() {
         Color color;
         do {
@@ -266,15 +258,22 @@ public class GraphImage {
 
     private void calcBorder() {
         for (PriceMap map : data.values()) {
+            if (map.isEmpty()) {
+                continue;
+            }
+
+            final long min = map.getKey(0);
+            final long max = map.getKey(map.size() - 1);
+
+            if (min < minTime) {
+                minTime = min;
+            }
+            if (max > maxTime) {
+                maxTime = max;
+            }
+
             for (int i = 0; i < map.size(); i++) {
-                final long time = map.getKey(i);
                 final float value = map.get(i);
-                if (time < minTime) {
-                    minTime = time;
-                }
-                if (time > maxTime) {
-                    maxTime = time;
-                }
                 if (value < minValue) {
                     minValue = value;
                 }
@@ -319,7 +318,7 @@ public class GraphImage {
             if (result) {
                 System.out.println("File exported to: " + target.getAbsolutePath());
             } else {
-                System.err.println("File could be exported: " + target.getAbsolutePath());
+                System.err.println("File couldn't be exported: " + target.getAbsolutePath());
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -328,6 +327,7 @@ public class GraphImage {
 
     public void free() {
         gc.dispose();
+        image.flush();
         target = null;
     }
 

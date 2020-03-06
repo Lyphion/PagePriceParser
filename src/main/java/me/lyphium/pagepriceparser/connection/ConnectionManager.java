@@ -29,6 +29,10 @@ public class ConnectionManager extends Thread {
     public ConnectionManager(int port) {
         this.port = port;
 
+        if (port < 0) {
+            return;
+        }
+
         try {
             // Setting up SocketServer to receive Client requests
             this.server = new ServerSocket(port);
@@ -42,6 +46,11 @@ public class ConnectionManager extends Thread {
 
     @Override
     public void run() {
+        if (port < 0) {
+            System.out.println("Client Manager disabled");
+            return;
+        }
+
         System.out.println("Started Client Manager");
 
         // Checking if the bot is still running
@@ -160,7 +169,7 @@ public class ConnectionManager extends Thread {
                         final PriceMap prices = priceData.getPrices(fuel);
 
                         for (int i = 0; i < prices.size(); i++) {
-                            newPriceData.addPrice(fuel,prices.getKey(i), prices.get(i));
+                            newPriceData.addPrice(fuel, prices.getKey(i), prices.get(i));
                         }
 
                         // Send back filtered PriceData
@@ -181,7 +190,7 @@ public class ConnectionManager extends Thread {
                         final PriceMap prices = priceData.getPrices(fuel);
 
                         for (int i = 0; i < prices.size(); i++) {
-                            newPriceData.addPrice(fuel,prices.getKey(i), prices.get(i));
+                            newPriceData.addPrice(fuel, prices.getKey(i), prices.get(i));
                         }
 
                         // Send back filtered PriceData

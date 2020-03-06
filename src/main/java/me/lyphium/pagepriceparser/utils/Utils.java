@@ -25,6 +25,10 @@ public class Utils {
 
     public long calculateDelay(String s) {
         try {
+            if (s.matches("(-)?(\\d)+")) {
+                return Long.parseLong(s);
+            }
+
             long delay = 0;
             for (Entry<String, Long> entry : delayTable.entrySet()) {
                 Pattern p = Pattern.compile(entry.getKey());

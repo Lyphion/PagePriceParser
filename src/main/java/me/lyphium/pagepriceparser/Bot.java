@@ -41,8 +41,8 @@ public class Bot {
             }
             // Parsing the Client Connection port
             else if (part.equals("-p") && i < args.length - 1) {
-                if (args[i + 1].matches("(\\d){1,5}")) {
-                    port = Integer.parseUnsignedInt(args[i + 1]);
+                if (args[i + 1].matches("(-)?(\\d){1,5}")) {
+                    port = Integer.parseInt(args[i + 1]);
                 }
             }
         }
@@ -55,8 +55,6 @@ public class Bot {
 
         // Creating Client Managager
         this.connectionManager = new ConnectionManager(port);
-
-        System.out.println("Checking Pages every " + (delay / 1000) + "sec");
     }
 
     public void start() {
