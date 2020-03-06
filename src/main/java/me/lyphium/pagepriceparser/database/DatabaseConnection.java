@@ -1,14 +1,15 @@
 package me.lyphium.pagepriceparser.database;
 
-import lombok.Getter;
-import me.lyphium.pagepriceparser.Bot;
+import com.zaxxer.hikari.HikariDataSource;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.PriceMap;
 
 import java.sql.*;
-import java.util.Date;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,148 +17,52 @@ import java.util.concurrent.Future;
 
 public class DatabaseConnection {
 
-    @Getter
-    private final String host, database;
-    @Getter
-    private final int port;
+    private final HikariDataSource source;
 
-    private final String username, password;
-
-    private ExecutorService service;
-    private Connection con;
-    private Thread reconnectThread;
+    private final ExecutorService service;
 
     public DatabaseConnection(String host, int port, String database, String username, String password) {
-        this.host = host;
-        this.port = port;
-        this.database = database;
-        this.username = username;
-        this.password = password;
+        this.source = new HikariDataSource();
+
+        source.setJdbcUrl(String.format(
+                "jdbc:mysql://%s:%d/%s?serverTimezone=Europe/Berlin",
+                host, port, database
+        ));
+        source.setUsername(username);
+        source.setPassword(password);
+        source.addDataSourceProperty("cachePrepStmts", true);
+        source.addDataSourceProperty("prepStmtCacheSize", 250);
+        source.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
+        source.addDataSourceProperty("useServerPrepStmts", true);
+        source.addDataSourceProperty("useLocalSessionState", true);
+        source.addDataSourceProperty("rewriteBatchedStatements", true);
+        source.addDataSourceProperty("cacheResultSetMetadata", true);
+        source.addDataSourceProperty("cacheServerConfiguration", true);
+        source.addDataSourceProperty("elideSetAutoCommits", true);
+        source.addDataSourceProperty("maintainTimeStats", false);
+
+        this.service = Executors.newCachedThreadPool();
     }
 
-    public boolean connect() {
-        if (isConnected()) {
-            System.err.println("Already connected");
-            return false;
-        }
-
-        try {
-            // Creating async Threads if not already done
-            if (service == null) {
-                service = Executors.newCachedThreadPool();
-            }
-
-            // Starting AutoReconnectThread
-            if (reconnectThread != null) {
-                reconnectThread.interrupt();
-            }
-            checkConnection();
-
-            // Checking if the MySQL Driver is available
-            Class.forName("com.mysql.cj.jdbc.Driver");
-
-            // Creating database connection
-            this.con = DriverManager.getConnection(
-                    String.format(
-                            "jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin",
-                            host, port, database
-                    ),
-                    username, password
-            );
-
-            System.out.println("Connected to database");
-            return true;
-        } catch (SQLException e) {
-            System.err.println("Couldn't connect to database");
-            return false;
-        } catch (ClassNotFoundException e) {
-            System.err.println("No MySQL driver found");
-            return false;
-        }
-    }
-
-    public boolean disconnect() {
-        if (!isConnected()) {
-            System.err.println("Already disconnected from database");
-            return false;
-        }
-
-        try {
-            // Closing connection
-            if (con != null) {
-                con.close();
-                con = null;
-            }
-
-            // Stopping async Threads
-            if (service != null) {
-                service.shutdown();
-                service = null;
-            }
-
-            // Stopping ReconnectThread
-            if (reconnectThread != null) {
-                reconnectThread.interrupt();
-                reconnectThread = null;
-            }
-
-            System.out.println("Disconnected from database");
-            return true;
-        } catch (SQLException e) {
-            System.err.println("Error while disconnecting from database");
-            return false;
-        }
-    }
-
-    private void checkConnection() {
-        // Check if the connection to the database is lost -> reconnect
-        this.reconnectThread = new Thread(() -> {
-            while (Bot.getInstance().isRunning()) {
-                try {
-                    Thread.sleep(5 * 60 * 1000);
-                    reconnect();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
-        reconnectThread.start();
-    }
-
-    private void reconnect() {
-        try {
-            if (con != null && con.isValid(5)) {
-                return;
-            }
-
-            this.con = DriverManager.getConnection(
-                    String.format(
-                            "jdbc:mysql://%s:%d/%s?autoReconnect=true&serverTimezone=Europe/Berlin",
-                            host, port, database
-                    ),
-                    username, password
-            );
-            System.out.println("Reconnected to database");
-        } catch (SQLException e) {
-            if (Bot.getInstance().isRunning()) {
-                System.err.println("Error while reconnecting to database");
-            }
-        }
+    public void stop() {
+        service.shutdown();
+        source.close();
     }
 
     public List<PriceData> getPages() {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
-        final List<PriceData> data = new ArrayList<>();
-
         final String execute = "SELECT id, name, url, address from pages;";
-        final PreparedStatement statement = createStatement(execute);
-        final ResultSet set = syncExecute(statement);
 
-        try {
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(execute);
+             ResultSet set = syncExecute(statement)) {
+
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return null;
+            }
+
+            final List<PriceData> data = new ArrayList<>();
+
             while (set.next()) {
                 final int id = set.getInt("id");
                 final String name = set.getString("name");
@@ -167,203 +72,167 @@ public class DatabaseConnection {
                 final PriceData priceData = new PriceData(id, name, url, address);
                 data.add(priceData);
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            close(set, statement);
-        }
 
-        return data;
+            return data;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public boolean loadPriceData(PriceData data, Timestamp begin, Timestamp end) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return false;
-        }
-
         final String execute = "SELECT p.fuelid, p.time, p.value " +
                 "FROM prices p " +
                 "INNER JOIN fuels f on p.fuelid = f.id " +
                 "WHERE p.pageid = ? AND p.time >= ? AND p.time <= ?;";
 
-        final PreparedStatement statement = createStatement(execute);
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(execute)) {
 
-        try {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return false;
+            }
+
             statement.setInt(1, data.getId());
             statement.setTimestamp(2, begin);
             statement.setTimestamp(3, end);
-        } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            close(null, statement);
-            return false;
-        }
 
-        final ResultSet set = syncExecute(statement);
-
-        try {
-            while (set.next()) {
-                final Fuel fuel = Fuel.getById(set.getInt("fuelid"));
-                final long time = set.getTimestamp("time").getTime();
-                final float value = set.getFloat("value");
-                data.addPrice(fuel, time, value);
+            try (ResultSet set = syncExecute(statement)) {
+                while (set.next()) {
+                    final Fuel fuel = Fuel.getById(set.getInt("fuelid"));
+                    final long time = set.getTimestamp("time").getTime();
+                    final float value = set.getFloat("value");
+                    data.addPrice(fuel, time, value);
+                }
             }
             return true;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return false;
-        } finally {
-            close(set, statement);
         }
     }
 
     public PriceData getPriceData(String name, Timestamp begin, Timestamp end) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
         final String execute = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
-        final PreparedStatement statement = createStatement(execute);
 
-        try {
-            statement.setString(1, name);
-        } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            return null;
-        }
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(execute)) {
 
-        final ResultSet set = syncExecute(statement);
-
-        try {
-            if (!set.next()) {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
                 return null;
             }
 
-            final int id = set.getInt("id");
-            final String url = set.getString("url");
-            final String address = set.getString("address");
+            statement.setString(1, name);
 
-            final PriceData data = new PriceData(id, name, url, address);
-            loadPriceData(data, begin, end);
+            try (ResultSet set = syncExecute(statement)) {
+                if (!set.next()) {
+                    return null;
+                }
 
-            return data;
-        } catch (Exception e) {
+                final int id = set.getInt("id");
+                final String url = set.getString("url");
+                final String address = set.getString("address");
+
+                final PriceData data = new PriceData(id, name, url, address);
+                loadPriceData(data, begin, end);
+
+                return data;
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
             return null;
-        } finally {
-            close(set, statement);
         }
     }
 
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
         final String execute = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
-        final PreparedStatement statement = createStatement(execute);
 
-        try {
-            statement.setInt(1, id);
-        } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            close(null, statement);
-            return null;
-        }
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(execute)) {
 
-        final ResultSet set = syncExecute(statement);
-
-        try {
-            if (!set.next()) {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
                 return null;
             }
 
-            final String name = set.getString("name");
-            final String url = set.getString("url");
-            final String address = set.getString("address");
+            statement.setInt(1, id);
 
-            final PriceData data = new PriceData(id, name, url, address);
-            loadPriceData(data, begin, end);
+            try (ResultSet set = syncExecute(statement)) {
+                if (!set.next()) {
+                    return null;
+                }
 
-            return data;
-        } catch (Exception e) {
+                final String name = set.getString("name");
+                final String url = set.getString("url");
+                final String address = set.getString("address");
+
+                final PriceData data = new PriceData(id, name, url, address);
+                loadPriceData(data, begin, end);
+
+                return data;
+            }
+        } catch (SQLException e) {
             e.printStackTrace();
             return null;
-        } finally {
-            close(set, statement);
         }
     }
 
     public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
-        final Map<Integer, PriceData> data = new HashMap<>();
-
         final String execute = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
                 "FROM prices pr INNER JOIN pages pa on pr.pageid = pa.id " +
                 "WHERE pr.fuelid = ? AND pr.time >= ? AND pr.time <= ?;";
 
-        final PreparedStatement statement = createStatement(execute);
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(execute)) {
 
-        try {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return null;
+            }
+
             statement.setInt(1, fuel.getId());
             statement.setTimestamp(2, begin);
             statement.setTimestamp(3, end);
-        } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            close(null, statement);
-            return null;
-        }
 
-        final ResultSet set = syncExecute(statement);
+            try (ResultSet set = syncExecute(statement)) {
+                final Map<Integer, PriceData> data = new HashMap<>();
 
-        try {
-            while (set.next()) {
-                final int id = set.getInt("id");
-                final boolean existed = data.containsKey(id);
+                while (set.next()) {
+                    final int id = set.getInt("id");
+                    final boolean existed = data.containsKey(id);
 
-                final PriceData priceData;
-                if (!existed) {
-                    final String name = set.getString("name");
-                    final String url = set.getString("url");
-                    final String address = set.getString("address");
+                    final PriceData priceData;
+                    if (!existed) {
+                        final String name = set.getString("name");
+                        final String url = set.getString("url");
+                        final String address = set.getString("address");
 
-                    priceData = new PriceData(id, name, url, address);
-                } else {
-                    priceData = data.get(id);
+                        priceData = new PriceData(id, name, url, address);
+                    } else {
+                        priceData = data.get(id);
+                    }
+
+                    final long time = set.getTimestamp("time").getTime();
+                    final float value = set.getFloat("value");
+
+                    priceData.addPrice(fuel, time, value);
+                    if (!existed) {
+                        data.put(id, priceData);
+                    }
                 }
 
-                final long time = set.getTimestamp("time").getTime();
-                final float value = set.getFloat("value");
-
-                priceData.addPrice(fuel, time, value);
-                if (!existed) {
-                    data.put(id, priceData);
-                }
+                return new ArrayList<>(data.values());
             }
-
-            return new ArrayList<>(data.values());
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
             return null;
-        } finally {
-            close(set, statement);
         }
     }
 
     public boolean savePriceData(List<PriceData> data) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return false;
-        }
-
         final long count = data.stream().mapToLong(pd -> pd.getPrices().values().size()).sum();
-
         if (count == 0) {
             return true;
         }
@@ -372,9 +241,14 @@ public class DatabaseConnection {
                 "VALUES (?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE value = VALUES(value);";
 
-        final PreparedStatement statement = createStatement(update);
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(update)) {
 
-        try {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return false;
+            }
+
             long i = 0;
             final Timestamp time = new Timestamp(0);
             for (PriceData pd : data) {
@@ -400,47 +274,40 @@ public class DatabaseConnection {
 
             return true;
         } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
+            e.printStackTrace();
             return false;
-        } finally {
-            close(null, statement);
         }
     }
 
     public boolean addPage(PriceData data) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return false;
-        }
-
         if (getPriceData(data.getName(), new Timestamp(0), new Timestamp(0)) != null) {
             return false;
         }
 
         final String update = "INSERT INTO pages (name, url, address) VALUES(?, ?, ?);";
-        final PreparedStatement statement = createStatement(update);
 
-        try {
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(update)) {
+
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return false;
+            }
+
             statement.setString(1, data.getName());
             statement.setString(2, data.getUrl());
             statement.setString(3, data.getAddress());
+
+            update(statement);
+
+            return true;
         } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            close(null, statement);
+            e.printStackTrace();
             return false;
         }
-
-        update(statement);
-
-        return true;
     }
 
     public boolean removePage(PriceData data) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return false;
-        }
-
         final String update;
         if (data.getId() > -1) {
             if (data.getName() != null) {
@@ -454,9 +321,14 @@ public class DatabaseConnection {
             return false;
         }
 
-        final PreparedStatement statement = createStatement(update);
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(update)) {
 
-        try {
+            if (!con.isValid(10)) {
+                System.err.println("No connection available");
+                return false;
+            }
+
             int i = 1;
             if (data.getId() > -1) {
                 statement.setInt(i++, data.getId());
@@ -464,43 +336,23 @@ public class DatabaseConnection {
             if (data.getName() != null) {
                 statement.setString(i, data.getName());
             }
+
+            return syncUpdate(statement) != 0;
         } catch (SQLException e) {
-            System.err.println("Invalid parameter: " + e.getMessage());
-            close(null, statement);
+            e.printStackTrace();
             return false;
         }
-
-        return syncUpdate(statement) != 0;
     }
 
     public boolean isConnected() {
-        try {
-            return con != null && !con.isClosed();
+        try (Connection con = source.getConnection()) {
+            return con.isValid(10);
         } catch (SQLException e) {
             return false;
-        }
-    }
-
-    private PreparedStatement createStatement(String statement) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
-        try {
-            return con.prepareStatement(statement);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
         }
     }
 
     private ResultSet syncExecute(PreparedStatement statement) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
         try {
             return statement.executeQuery();
         } catch (SQLException e) {
@@ -515,9 +367,7 @@ public class DatabaseConnection {
 
     private int syncUpdate(PreparedStatement statement) {
         try {
-            final int res = statement.executeUpdate();
-            statement.close();
-            return res;
+            return statement.executeUpdate();
         } catch (SQLException e) {
             e.printStackTrace();
             return 0;
@@ -529,11 +379,6 @@ public class DatabaseConnection {
     }
 
     private int[] syncExecuteBatch(PreparedStatement statement) {
-        if (!isConnected()) {
-            System.err.println("No connection available");
-            return null;
-        }
-
         try {
             return statement.executeBatch();
         } catch (SQLException e) {
@@ -544,32 +389,6 @@ public class DatabaseConnection {
 
     private void executebatch(PreparedStatement statement) {
         service.execute(() -> syncExecuteBatch(statement));
-    }
-
-    private void close(ResultSet set, PreparedStatement statement) {
-        try {
-            if (set != null) {
-                set.close();
-            }
-            if (statement != null) {
-                statement.close();
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private String toStringData(Object o) {
-        if (o == null) {
-            return "NULL";
-        } else if (o instanceof Number) {
-            return o.toString().replace(',', '.');
-        } else if (o instanceof Boolean) {
-            return (Boolean) o ? "1" : "0";
-        } else if (o instanceof Date) {
-            return "'" + new Timestamp(((Date) o).getTime()).toString() + "'";
-        }
-        return "'" + o.toString() + "'";
     }
 
 }

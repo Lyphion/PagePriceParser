@@ -61,9 +61,6 @@ public class Bot {
         this.running = true;
         System.out.println("Starting Bot...");
 
-        // Connecting to database
-        database.connect();
-
         // Starting Parse Thread
         parser.start();
 
@@ -78,10 +75,8 @@ public class Bot {
         this.running = false;
         System.out.println("Stopping Bot...");
 
-        // Disconnecting from database
-        if (database.isConnected()) {
-            database.disconnect();
-        }
+        // Shutting down databaseconnection
+        database.stop();
 
         // Shutting down Parse Thread
         parser.cancel();

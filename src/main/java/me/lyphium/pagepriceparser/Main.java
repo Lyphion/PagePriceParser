@@ -1,5 +1,7 @@
 package me.lyphium.pagepriceparser;
 
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
 import me.lyphium.pagepriceparser.utils.PrettyPrintStream;
 
 public class Main {
@@ -8,6 +10,10 @@ public class Main {
         // Changing Console Logformat
         System.setOut(new PrettyPrintStream(System.out, "INFO"));
         System.setErr(new PrettyPrintStream(System.err, "ERROR"));
+
+        // Disable Debug Log
+        final Logger root = (Logger) org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        root.setLevel(Level.OFF);
 
         // Creating and starting Bot
         final Bot bot = new Bot();
