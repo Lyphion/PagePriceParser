@@ -18,6 +18,8 @@ import java.util.Map.Entry;
 
 public class PageParser extends Thread {
 
+    public static final long DEFAULT_DELAY = 60 * 60 * 1000;
+
     @Getter
     @Setter
     private long delay;
@@ -116,6 +118,10 @@ public class PageParser extends Thread {
 
     public synchronized void cancel() {
         interrupt();
+
+        if (delay < 0) {
+            return;
+        }
 
         System.out.println("Shut down Page Parser");
     }

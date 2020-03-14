@@ -1,5 +1,6 @@
 package me.lyphium.pagepriceparser.connection;
 
+import lombok.Getter;
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.connection.packet.DataPacket;
 import me.lyphium.pagepriceparser.connection.packet.DataRequestPacket;
@@ -22,6 +23,9 @@ import java.util.List;
 
 public class ConnectionManager extends Thread {
 
+    public static final short DEFAULT_PORT = 14703;
+
+    @Getter
     private final int port;
 
     private ServerSocket server;
@@ -97,6 +101,10 @@ public class ConnectionManager extends Thread {
 
     public synchronized void cancel() {
         interrupt();
+
+        if (!isValid()) {
+            return;
+        }
 
         try {
             // Close ServerSocket

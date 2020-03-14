@@ -18,24 +18,34 @@ public class DelayCommand extends Command {
 
         final Bot bot = Bot.getInstance();
 
+        // Get current delay
+        long delay = bot.getParser().getDelay();
+
         // Check if only request or delay change
         if (args.length == 0) {
-            // Get current delay
-            final long delay = bot.getParser().getDelay();
-            System.out.println("Current delay: " + delay + "ms");
+            if (delay < 0) {
+                System.out.println("Page parser is disabled");
+            } else {
+                System.out.println("Current delay: " + delay + "ms");
+            }
         } else {
-            final long delay;
+            if (delay < 0) {
+                System.out.println("Page parser is disabled. To change delay restart Bot");
+                return true;
+            }
 
             // Parse new delay as a number or time string
-            if (args[0].matches("(\\d)+")) {
-                delay = Long.parseUnsignedLong(args[0]);
-            } else {
-                delay = Utils.calculateDelay(args[0]);
-            }
+            delay = Utils.calculateDelay(args[0]);
 
             // Set new delay
             bot.getParser().setDelay(delay);
-            System.out.println("New delay: " + delay + "ms");
+
+            if (delay < 0) {
+                bot.getParser().cancel();
+                System.out.println("Shut down Page Parser");
+            } else {
+                System.out.println("New delay: " + delay + "ms");
+            }
         }
 
         return true;

@@ -30,8 +30,8 @@ public class Bot {
         registerCommands();
 
         // Parsing start arguments
-        long delay = 60 * 60 * 1000;
-        int port = 14703;
+        long delay = PageParser.DEFAULT_DELAY;
+        int port = ConnectionManager.DEFAULT_PORT;
         for (int i = 0; i < args.length; i++) {
             final String part = args[i];
 
@@ -60,6 +60,11 @@ public class Bot {
     public void start() {
         this.running = true;
         System.out.println("Starting Bot...");
+
+        // Test for valid database connection
+        if (!database.isConnected()) {
+            System.err.println("No database connection currently available. Please check");
+        }
 
         // Starting Parse Thread
         parser.start();

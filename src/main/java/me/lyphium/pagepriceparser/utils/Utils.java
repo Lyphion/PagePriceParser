@@ -1,6 +1,7 @@
 package me.lyphium.pagepriceparser.utils;
 
 import lombok.experimental.UtilityClass;
+import me.lyphium.pagepriceparser.parser.PageParser;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -40,7 +41,7 @@ public class Utils {
             }
             return delay * 1000;
         } catch (Exception e) {
-            return 60 * 60 * 1000;
+            return PageParser.DEFAULT_DELAY;
         }
     }
 

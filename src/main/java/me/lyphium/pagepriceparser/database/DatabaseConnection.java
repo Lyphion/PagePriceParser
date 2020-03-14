@@ -24,12 +24,12 @@ public class DatabaseConnection {
     public DatabaseConnection(String host, int port, String database, String username, String password) {
         this.source = new HikariDataSource();
 
-        source.setJdbcUrl(String.format(
-                "jdbc:mysql://%s:%d/%s?serverTimezone=Europe/Berlin",
-                host, port, database
-        ));
+        source.setJdbcUrl(String.format("jdbc:mysql://%s:%d/%s", host, port, database));
         source.setUsername(username);
         source.setPassword(password);
+
+        source.addDataSourceProperty("serverTimezone", "Europe/Berlin");
+        source.addDataSourceProperty("connectionTimeout", 5000);
         source.addDataSourceProperty("cachePrepStmts", true);
         source.addDataSourceProperty("prepStmtCacheSize", 250);
         source.addDataSourceProperty("prepStmtCacheSqlLimit", 2048);
@@ -47,19 +47,16 @@ public class DatabaseConnection {
     public void stop() {
         service.shutdown();
         source.close();
+
+        System.out.println("Shut down Database Manager");
     }
 
     public List<PriceData> getPages() {
-        final String execute = "SELECT id, name, url, address from pages;";
+        final String sql = "SELECT id, name, url, address from pages;";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(execute);
+             PreparedStatement statement = con.prepareStatement(sql);
              ResultSet set = syncExecute(statement)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return null;
-            }
 
             final List<PriceData> data = new ArrayList<>();
 
@@ -81,18 +78,13 @@ public class DatabaseConnection {
     }
 
     public boolean loadPriceData(PriceData data, Timestamp begin, Timestamp end) {
-        final String execute = "SELECT p.fuelid, p.time, p.value " +
+        final String sql = "SELECT p.fuelid, p.time, p.value " +
                 "FROM prices p " +
                 "INNER JOIN fuels f on p.fuelid = f.id " +
                 "WHERE p.pageid = ? AND p.time >= ? AND p.time <= ?;";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(execute)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return false;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             statement.setInt(1, data.getId());
             statement.setTimestamp(2, begin);
@@ -114,15 +106,10 @@ public class DatabaseConnection {
     }
 
     public PriceData getPriceData(String name, Timestamp begin, Timestamp end) {
-        final String execute = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
+        final String sql = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(execute)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return null;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             statement.setString(1, name);
 
@@ -147,15 +134,10 @@ public class DatabaseConnection {
     }
 
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
-        final String execute = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
+        final String sql = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(execute)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return null;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             statement.setInt(1, id);
 
@@ -180,17 +162,12 @@ public class DatabaseConnection {
     }
 
     public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
-        final String execute = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
+        final String sql = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
                 "FROM prices pr INNER JOIN pages pa on pr.pageid = pa.id " +
                 "WHERE pr.fuelid = ? AND pr.time >= ? AND pr.time <= ?;";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(execute)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return null;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             statement.setInt(1, fuel.getId());
             statement.setTimestamp(2, begin);
@@ -237,17 +214,12 @@ public class DatabaseConnection {
             return true;
         }
 
-        final String update = "INSERT INTO prices (pageid, fuelid, time, value) " +
+        final String sql = "INSERT INTO prices (pageid, fuelid, time, value) " +
                 "VALUES (?, ?, ?, ?) " +
                 "ON DUPLICATE KEY UPDATE value = VALUES(value);";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(update)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return false;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             long i = 0;
             final Timestamp time = new Timestamp(0);
@@ -284,15 +256,10 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String update = "INSERT INTO pages (name, url, address) VALUES(?, ?, ?);";
+        final String sql = "INSERT INTO pages (name, url, address) VALUES(?, ?, ?);";
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(update)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return false;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             statement.setString(1, data.getName());
             statement.setString(2, data.getUrl());
@@ -308,26 +275,21 @@ public class DatabaseConnection {
     }
 
     public boolean removePage(PriceData data) {
-        final String update;
+        final String sql;
         if (data.getId() > -1) {
             if (data.getName() != null) {
-                update = "DELETE FROM pages WHERE id = ? AND LOWER(name) = LOWER(?);";
+                sql = "DELETE FROM pages WHERE id = ? AND LOWER(name) = LOWER(?);";
             } else {
-                update = "DELETE FROM pages WHERE id = ?;";
+                sql = "DELETE FROM pages WHERE id = ?;";
             }
         } else if (data.getName() != null) {
-            update = "DELETE FROM pages WHERE LOWER(name) = LOWER(?);";
+            sql = "DELETE FROM pages WHERE LOWER(name) = LOWER(?);";
         } else {
             return false;
         }
 
         try (Connection con = source.getConnection();
-             PreparedStatement statement = con.prepareStatement(update)) {
-
-            if (!con.isValid(10)) {
-                System.err.println("No connection available");
-                return false;
-            }
+             PreparedStatement statement = con.prepareStatement(sql)) {
 
             int i = 1;
             if (data.getId() > -1) {
@@ -346,7 +308,7 @@ public class DatabaseConnection {
 
     public boolean isConnected() {
         try (Connection con = source.getConnection()) {
-            return con.isValid(10);
+            return con.isValid(5);
         } catch (SQLException e) {
             return false;
         }

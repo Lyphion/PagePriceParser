@@ -16,10 +16,12 @@ import java.util.Random;
 @Getter
 public class GraphImage {
 
+    // Textalignment
     public enum Alignment {
         LEFT, CENTER, RIGHT
     }
 
+    // Default Sizes and Positions
     public static final short
             WIDTH = 1920,
             HEIGHT = 1080,
@@ -30,8 +32,10 @@ public class GraphImage {
             INFO_LINE_Y = HEIGHT - 20,
             GRAPH_TIME_OFFSET = 62;
 
+    // Default Graphlinestroke
     public static final BasicStroke LINE_STROKE = new BasicStroke(2, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND);
 
+    // Default Colors for the graph
     public static final Color
             ORANGE = new Color(211, 84, 0),
             SILVER = new Color(189, 195, 199),
@@ -40,6 +44,7 @@ public class GraphImage {
             LIGHT_GRAY = new Color(104, 104, 104),
             DARK_GRAY = new Color(25, 25, 25);
 
+    // Custom fonts for the graph
     private static Font REGULAR, ITALIC, BOLD, BOLD_ITALIC;
 
     static {
@@ -65,16 +70,19 @@ public class GraphImage {
     private long minTime = Long.MAX_VALUE, maxTime = Long.MIN_VALUE;
 
     public GraphImage(String name, Map<String, PriceMap> map, File target) {
-        this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
-        this.gc = (Graphics2D) image.getGraphics();
-        this.random = new Random(System.currentTimeMillis());
-
         this.name = name;
         this.data = map;
         this.target = target;
 
+        this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
+        this.gc = (Graphics2D) image.getGraphics();
+
+        this.random = new Random(System.currentTimeMillis());
+
+        // Calculate the minimum and maximum values for the x and y axis
         calcBorder();
 
+        // Init the quality drawing settings
         gc.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
         gc.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         gc.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -90,6 +98,7 @@ public class GraphImage {
         // Draw Title with Name and Time
         drawText(WIDTH / 2, 50, name, ORANGE, BOLD, 30, Alignment.CENTER);
 
+        // Create and draw timespan
         final String times = Utils.toString(new Date(minTime)) + " Uhr - " + Utils.toString(new Date(maxTime)) + " Uhr";
         drawText(WIDTH / 2, 75, times, CONCRETE, ITALIC, 20, Alignment.CENTER);
 
@@ -262,6 +271,7 @@ public class GraphImage {
                 continue;
             }
 
+            // Get first and last key in map (Map is sorted -> minimum and maximum)
             final long min = map.getKey(0);
             final long max = map.getKey(map.size() - 1);
 
@@ -272,6 +282,7 @@ public class GraphImage {
                 maxTime = max;
             }
 
+            // Get minimum and maximum values in map
             for (int i = 0; i < map.size(); i++) {
                 final float value = map.get(i);
                 if (value < minValue) {
@@ -285,6 +296,13 @@ public class GraphImage {
     }
 
     private void createSteps(int[] timeIn, int[] timeOut, int[] valueIn, int[] valueOut) {
+        /*
+         *      +---+
+         *      |   |     +---+
+         *   +--+   |     |
+         *          +-----+
+         */
+
         for (int i = 0; i < timeIn.length; i++) {
             timeOut[i * 2] = timeIn[i];
             if (i < timeIn.length - 1) {
@@ -301,10 +319,12 @@ public class GraphImage {
 
     public void export() {
         try {
+            // Delete old file if it exists
             if (target.exists()) {
                 target.delete();
             }
 
+            // Parse file format, default 'png'
             final String format;
             final int index = target.getName().lastIndexOf('.');
             if (index > -1) {
@@ -314,7 +334,10 @@ public class GraphImage {
                 target = new File(target.getParent(), target.getName() + ".png");
             }
 
+            // Write file to drive
             final boolean result = ImageIO.write(image, format, target);
+
+            // Check if the file couldn't be exported
             if (result) {
                 System.out.println("File exported to: " + target.getAbsolutePath());
             } else {
