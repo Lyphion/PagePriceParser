@@ -17,6 +17,7 @@ public class Bot {
     private static Bot instance;
 
     private boolean running;
+
     private PageParser parser;
     private DatabaseConnection database;
     private ConnectionManager connectionManager;
@@ -122,6 +123,7 @@ public class Bot {
         Command.registerCommand(new DelayCommand());
         Command.registerCommand(new GraphCommand());
         Command.registerCommand(new HelpCommand());
+        Command.registerCommand(new InfoCommand());
         Command.registerCommand(new PrintCommand());
         Command.registerCommand(new RemovePageCommand());
         Command.registerCommand(new UpdateCommand());

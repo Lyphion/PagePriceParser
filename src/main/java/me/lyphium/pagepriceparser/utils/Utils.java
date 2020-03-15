@@ -11,6 +11,7 @@ import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.IntStream;
 
 @UtilityClass
 public class Utils {
@@ -43,6 +44,34 @@ public class Utils {
         } catch (Exception e) {
             return PageParser.DEFAULT_DELAY;
         }
+    }
+
+    public int distance(String from, String to) {
+        final int fromLength = from.length() + 1;
+        final int toLength = to.length() + 1;
+
+        int[] cost = IntStream.range(0, fromLength).toArray();
+        int[] newCost = new int[fromLength];
+
+        for (int j = 1; j < toLength; j++) {
+            newCost[0] = j;
+
+            for (int i = 1; i < fromLength; i++) {
+                final int match = from.charAt(i - 1) == to.charAt(j - 1) ? 0 : 2;
+
+                final int replaceCost = cost[i - 1] + match;
+                final int insertCost = cost[i] + 1;
+                final int deleteCost = newCost[i - 1] + 1;
+
+                newCost[i] = Math.min(Math.min(insertCost, deleteCost), replaceCost);
+            }
+
+            final int[] swap = cost;
+            cost = newCost;
+            newCost = swap;
+        }
+
+        return cost[fromLength - 1];
     }
 
     public String getDomain(String url) {
@@ -94,10 +123,12 @@ public class Utils {
     }
 
     public Timestamp toTimestamp(String s) {
-        if (s.matches("(\\d)+")) {
-            return new Timestamp(Long.parseUnsignedLong(s));
-        }
         try {
+            if (s.equalsIgnoreCase("now")) {
+                return new Timestamp(System.currentTimeMillis());
+            } else if (s.matches("(\\d)+")) {
+                return new Timestamp(Long.parseUnsignedLong(s));
+            }
             return Timestamp.valueOf(s);
         } catch (Exception e) {
             return null;

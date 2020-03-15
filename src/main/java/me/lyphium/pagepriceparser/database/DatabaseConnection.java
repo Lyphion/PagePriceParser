@@ -3,7 +3,9 @@ package me.lyphium.pagepriceparser.database;
 import com.zaxxer.hikari.HikariDataSource;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
+import me.lyphium.pagepriceparser.utils.Pair;
 import me.lyphium.pagepriceparser.utils.PriceMap;
+import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.sql.*;
 import java.util.ArrayList;
@@ -81,7 +83,7 @@ public class DatabaseConnection {
         final String sql = "SELECT p.fuelid, p.time, p.value " +
                 "FROM prices p " +
                 "INNER JOIN fuels f on p.fuelid = f.id " +
-                "WHERE p.pageid = ? AND p.time >= ? AND p.time <= ?;";
+                "WHERE p.pageid = ? AND p.time BETWEEN ? AND ?;";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
@@ -133,6 +135,31 @@ public class DatabaseConnection {
         }
     }
 
+    public PriceData getMostSimilarPriceData(String name, Timestamp begin, Timestamp end) {
+        final List<PriceData> pages = getPages();
+
+        if (pages == null || pages.isEmpty()) {
+            return null;
+        }
+
+        name = name.toLowerCase();
+
+        int minDis = Integer.MAX_VALUE;
+        PriceData data = null;
+        for (PriceData page : pages) {
+            final int dis = Utils.distance(name, page.getName().toLowerCase());
+
+            if (dis < minDis) {
+                data = page;
+                minDis = dis;
+            }
+        }
+
+        loadPriceData(data, begin, end);
+
+        return data;
+    }
+
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
         final String sql = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
 
@@ -164,7 +191,7 @@ public class DatabaseConnection {
     public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
         final String sql = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
                 "FROM prices pr INNER JOIN pages pa on pr.pageid = pa.id " +
-                "WHERE pr.fuelid = ? AND pr.time >= ? AND pr.time <= ?;";
+                "WHERE pr.fuelid = ? AND pr.time BETWEEN ? AND ?;";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
@@ -303,6 +330,33 @@ public class DatabaseConnection {
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
+        }
+    }
+
+    public List<Pair<String, Object>> getDatabaseInformation() {
+        final String sql = "SELECT (SELECT COUNT(name) FROM pages) as pages, " +
+                "(SELECT COUNT(id) FROM prices) as prices, " +
+                "(SELECT time FROM prices ORDER BY time LIMIT 1) as first, " +
+                "(SELECT time FROM prices ORDER BY time DESC LIMIT 1) as last;";
+
+        try (Connection con = source.getConnection();
+             PreparedStatement statement = con.prepareStatement(sql);
+             ResultSet set = syncExecute(statement)) {
+            final List<Pair<String, Object>> info = new ArrayList<>();
+
+            if (!set.next()) {
+                return info;
+            }
+
+            info.add(new Pair<>("Number of Pages", set.getShort("pages")));
+            info.add(new Pair<>("Number of Prices", set.getLong("prices")));
+            info.add(new Pair<>("First Update", set.getTimestamp("first")));
+            info.add(new Pair<>("Last Update", set.getTimestamp("last")));
+
+            return info;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
         }
     }
 

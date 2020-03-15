@@ -75,10 +75,10 @@ public class PrintCommand extends Command {
                 }
             } else {
                 // Parse name
-                final String name = args[0];
+                final String name = args[1];
 
                 // Get PriceData from database
-                data = database.getPriceData(name, begin, end);
+                data = database.getMostSimilarPriceData(name, begin, end);
             }
 
             // Check if data was found
