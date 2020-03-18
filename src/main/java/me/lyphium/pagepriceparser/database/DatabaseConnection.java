@@ -13,15 +13,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 public class DatabaseConnection {
 
     private final HikariDataSource source;
-
-    private final ExecutorService service;
 
     public DatabaseConnection(String host, int port, String database, String username, String password) {
         this.source = new HikariDataSource();
@@ -42,12 +37,9 @@ public class DatabaseConnection {
         source.addDataSourceProperty("cacheServerConfiguration", true);
         source.addDataSourceProperty("elideSetAutoCommits", true);
         source.addDataSourceProperty("maintainTimeStats", false);
-
-        this.service = Executors.newCachedThreadPool();
     }
 
     public void stop() {
-        service.shutdown();
         source.close();
 
         System.out.println("Shut down Database Manager");
@@ -58,7 +50,7 @@ public class DatabaseConnection {
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql);
-             ResultSet set = syncExecute(statement)) {
+             ResultSet set = statement.executeQuery()) {
 
             final List<PriceData> data = new ArrayList<>();
 
@@ -92,7 +84,7 @@ public class DatabaseConnection {
             statement.setTimestamp(2, begin);
             statement.setTimestamp(3, end);
 
-            try (ResultSet set = syncExecute(statement)) {
+            try (ResultSet set = statement.executeQuery()) {
                 while (set.next()) {
                     final Fuel fuel = Fuel.getById(set.getInt("fuelid"));
                     final long time = set.getTimestamp("time").getTime();
@@ -115,7 +107,7 @@ public class DatabaseConnection {
 
             statement.setString(1, name);
 
-            try (ResultSet set = syncExecute(statement)) {
+            try (ResultSet set = statement.executeQuery()) {
                 if (!set.next()) {
                     return null;
                 }
@@ -168,7 +160,7 @@ public class DatabaseConnection {
 
             statement.setInt(1, id);
 
-            try (ResultSet set = syncExecute(statement)) {
+            try (ResultSet set = statement.executeQuery()) {
                 if (!set.next()) {
                     return null;
                 }
@@ -200,7 +192,7 @@ public class DatabaseConnection {
             statement.setTimestamp(2, begin);
             statement.setTimestamp(3, end);
 
-            try (ResultSet set = syncExecute(statement)) {
+            try (ResultSet set = statement.executeQuery()) {
                 final Map<Integer, PriceData> data = new HashMap<>();
 
                 while (set.next()) {
@@ -265,7 +257,7 @@ public class DatabaseConnection {
                         i++;
 
                         if (i % 1000 == 0 || i == count) {
-                            syncExecuteBatch(statement);
+                            statement.executeBatch();
                         }
                     }
                 }
@@ -292,9 +284,7 @@ public class DatabaseConnection {
             statement.setString(2, data.getUrl());
             statement.setString(3, data.getAddress());
 
-            update(statement);
-
-            return true;
+            return statement.executeUpdate() != 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -326,7 +316,7 @@ public class DatabaseConnection {
                 statement.setString(i, data.getName());
             }
 
-            return syncUpdate(statement) != 0;
+            return statement.executeUpdate() != 0;
         } catch (SQLException e) {
             e.printStackTrace();
             return false;
@@ -341,7 +331,7 @@ public class DatabaseConnection {
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql);
-             ResultSet set = syncExecute(statement)) {
+             ResultSet set = statement.executeQuery()) {
             final List<Pair<String, Object>> info = new ArrayList<>();
 
             if (!set.next()) {
@@ -366,45 +356,6 @@ public class DatabaseConnection {
         } catch (SQLException e) {
             return false;
         }
-    }
-
-    private ResultSet syncExecute(PreparedStatement statement) {
-        try {
-            return statement.executeQuery();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private Future<ResultSet> execute(PreparedStatement statement) {
-        return service.submit(() -> syncExecute(statement));
-    }
-
-    private int syncUpdate(PreparedStatement statement) {
-        try {
-            return statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return 0;
-        }
-    }
-
-    private void update(PreparedStatement statement) {
-        service.execute(() -> syncUpdate(statement));
-    }
-
-    private int[] syncExecuteBatch(PreparedStatement statement) {
-        try {
-            return statement.executeBatch();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-    }
-
-    private void executebatch(PreparedStatement statement) {
-        service.execute(() -> syncExecuteBatch(statement));
     }
 
 }

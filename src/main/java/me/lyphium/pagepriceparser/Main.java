@@ -3,6 +3,7 @@ package me.lyphium.pagepriceparser;
 import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.Logger;
 import me.lyphium.pagepriceparser.utils.PrettyPrintStream;
+import org.slf4j.LoggerFactory;
 
 public class Main {
 
@@ -12,7 +13,7 @@ public class Main {
         System.setErr(new PrettyPrintStream(System.err, "ERROR"));
 
         // Disable Debug Log
-        final Logger root = (Logger) org.slf4j.LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
+        final Logger root = (Logger) LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         root.setLevel(Level.OFF);
 
         // Creating and starting Bot

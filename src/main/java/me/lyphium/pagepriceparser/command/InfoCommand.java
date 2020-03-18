@@ -104,6 +104,19 @@ public class InfoCommand extends Command {
                 return true;
             }
 
+            /*
+             *  ID:      -id-
+             *  Name:    -name-
+             *  URL:     -url-
+             *  Address: -address-
+             *
+             *        |  Fuel1 |  Fuel2 | ...
+             *  ------+--------+--------+------
+             *    Min | 1.259€ | 1.359€ |
+             *   Time |  ....  |  ....  |
+             *    Max |        |        |
+             */
+
             final StringBuilder builder = new StringBuilder("--------- Information Page ---------\n");
             builder.append(String.format("ID:      %d\n", data.getId()));
             builder.append(String.format("Name:    %s\n", data.getName()));
@@ -111,6 +124,14 @@ public class InfoCommand extends Command {
             builder.append(String.format("Address: %s\n\n", data.getAddress()));
 
             final Map<Fuel, PriceMap> prices = data.getPrices();
+
+            // Check if List of PriceData contains Price Information
+            if (prices.size() == 0 || prices.values().stream().map(PriceMap::size).count() == 0) {
+                builder.append("No price data available");
+                System.out.println(builder.toString());
+                return true;
+            }
+
             final List<Fuel> fuels = new ArrayList<>(prices.keySet());
             final int[] colSize = new int[fuels.size()];
 
@@ -201,11 +222,28 @@ public class InfoCommand extends Command {
                 return true;
             }
 
+            /*
+             *  Fuel:  -fuel-
+             *
+             *   Time |  Page1 |  Page2 | ...
+             *  ------+--------+--------+------
+             *    Min | 1.259€ | 1.359€ |
+             *   Time |  ....  |  ....  |
+             *    Max |        |        |
+             */
+
             final List<PriceData> data = database.getPriceData(fuel, new Timestamp(0), new Timestamp(System.currentTimeMillis()));
 
             // Building the head of the Information page
             final StringBuilder builder = new StringBuilder("--------- Information Page ---------\n");
             builder.append(String.format("Fuel:  %s\n\n", fuel.getName()));
+
+            // Check if List of PriceData contains Price Information
+            if (data.isEmpty() || data.stream().map(p -> p.getPrices(fuel).size()).count() == 0) {
+                builder.append("No price data available");
+                System.out.println(builder.toString());
+                return true;
+            }
 
             final int[] colSize = new int[data.size()];
             final String[][] headLines = new String[data.size()][];

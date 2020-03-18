@@ -141,8 +141,8 @@ public class ConnectionManager extends Thread {
                 int id = -1;
                 String name = null;
                 Fuel fuel = null;
-                long begin = 0;
-                long end = System.currentTimeMillis();
+                final Timestamp begin = new Timestamp(0);
+                final Timestamp end = new Timestamp(System.currentTimeMillis());
 
                 // Parse arguments by type
                 for (int i = 0; i < types.length; i++) {
@@ -150,21 +150,29 @@ public class ConnectionManager extends Thread {
 
                     if (type == RequestType.ID) {
                         id = (int) data[i];
+                        if (id < 0) {
+                            return new InvalidRequestPacket("Id must be at least 0");
+                        }
                     } else if (type == RequestType.NAME) {
                         name = (String) data[i];
                     } else if (type == RequestType.FUEL) {
                         fuel = (Fuel) data[i];
                     } else if (type == RequestType.TIME_BEGIN) {
-                        begin = (long) data[i];
+                        begin.setTime((long) data[i]);
                     } else if (type == RequestType.TIME_END) {
-                        end = (long) data[i];
+                        end.setTime((long) data[i]);
                     }
                 }
 
                 // If id is set
                 if (id > -1) {
                     // Get PriceData from database with id
-                    final PriceData priceData = database.getPriceData(id, new Timestamp(begin), new Timestamp(end));
+                    final PriceData priceData = database.getPriceData(id, begin, end);
+
+                    // Check if data exists
+                    if (priceData == null) {
+                        return new InvalidRequestPacket("No pricedata found");
+                    }
 
                     // Check if the given is equal with the request name
                     if (name != null && !priceData.getName().equals(name)) {
@@ -190,7 +198,12 @@ public class ConnectionManager extends Thread {
                 // If name is set and not id
                 else if (name != null) {
                     // Get PriceData from database with name
-                    final PriceData priceData = database.getPriceData(name, new Timestamp(begin), new Timestamp(end));
+                    final PriceData priceData = database.getMostSimilarPriceData(name, begin, end);
+
+                    // Check if data exists
+                    if (priceData == null) {
+                        return new InvalidRequestPacket("No pricedata found");
+                    }
 
                     // Filter if fuel is set
                     if (fuel != null) {
@@ -209,7 +222,7 @@ public class ConnectionManager extends Thread {
                     }
                 } else if (fuel != null) {
                     // Get List of PriceData from database with fuel
-                    final List<PriceData> priceData = database.getPriceData(fuel, new Timestamp(begin), new Timestamp(end));
+                    final List<PriceData> priceData = database.getPriceData(fuel, begin, end);
 
                     // Send back List of PriceData
                     return new DataPacket(priceData);
@@ -219,7 +232,7 @@ public class ConnectionManager extends Thread {
                 }
             } catch (Exception e) {
                 System.err.println("Invalid packet received");
-                return new InvalidRequestPacket("Invalid Packet received");
+                return new InvalidRequestPacket("Invalid packet received");
             }
         }
 

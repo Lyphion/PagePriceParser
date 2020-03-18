@@ -83,7 +83,7 @@ public class Utils {
         }
     }
 
-    public float round(double value, int decimal) {
+    public float round(float value, int decimal) {
         final double pow = Math.pow(10, decimal);
         return (float) (Math.round(value * pow) / pow);
     }
@@ -126,8 +126,8 @@ public class Utils {
         try {
             if (s.equalsIgnoreCase("now")) {
                 return new Timestamp(System.currentTimeMillis());
-            } else if (s.matches("(\\d)+")) {
-                return new Timestamp(Long.parseUnsignedLong(s));
+            } else if (s.matches("(-)?(\\d)+")) {
+                return new Timestamp(Long.parseLong(s));
             }
             return Timestamp.valueOf(s);
         } catch (Exception e) {

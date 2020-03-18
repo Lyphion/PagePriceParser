@@ -1,7 +1,8 @@
 package me.lyphium.pagepriceparser.utils;
 
-import java.util.Objects;
+import lombok.Data;
 
+@Data
 public class Pair<T, U> {
 
     private T first;
@@ -10,42 +11,6 @@ public class Pair<T, U> {
     public Pair(T first, U second) {
         this.first = first;
         this.second = second;
-    }
-
-    public T getFirst() {
-        return first;
-    }
-
-    public void setFirst(T first) {
-        this.first = first;
-    }
-
-    public U getSecond() {
-        return second;
-    }
-
-    public void setSecond(U second) {
-        this.second = second;
-    }
-
-    @Override
-    public String toString() {
-        return "Pair{first=" + first + ", second=" + second + '}';
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof Pair)) return false;
-
-        final Pair<?, ?> pair = (Pair<?, ?>) o;
-        return Objects.equals(first, pair.first) &&
-                Objects.equals(second, pair.second);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(first, second);
     }
 
 }

@@ -40,13 +40,16 @@ public class HelpCommand extends Command {
                 builder.append("Command '").append(cmdLabel).append("' not found!\n");
             } else {
                 // Create Information: Main-Command, description, usage and aliases
-                builder.append("» ").append("Command: ").append(command.getName()).append('\n');
-                if (!command.getDescription().isEmpty())
-                    builder.append("» ").append("Description: ").append(command.getDescription()).append('\n');
-                if (!command.getUsage().isEmpty())
-                    builder.append("» ").append("Usage: ").append(command.getUsage()).append('\n');
-                if (command.getAliases().length > 0)
-                    builder.append("» ").append("Aliases: ").append(Arrays.toString(command.getAliases())).append('\n');
+                builder.append("» Command: ").append(command.getName()).append('\n');
+                if (!command.getDescription().isEmpty()) {
+                    builder.append("» Description: ").append(command.getDescription()).append('\n');
+                }
+                if (!command.getUsage().isEmpty()) {
+                    builder.append("» Usage: ").append(command.getUsage()).append('\n');
+                }
+                if (command.getAliases().length > 0) {
+                    builder.append("» Aliases: ").append(Arrays.toString(command.getAliases())).append('\n');
+                }
             }
         } else {
             return false;

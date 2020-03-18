@@ -39,6 +39,7 @@ public class GraphCommand extends Command {
 
         final File file = new File(args[2]);
         try {
+            // Check if path is valid
             file.getCanonicalPath();
         } catch (IOException e) {
             System.err.println("Invalid file path");
