@@ -9,6 +9,7 @@ import me.lyphium.pagepriceparser.utils.GraphImage;
 import me.lyphium.pagepriceparser.utils.PriceMap;
 import me.lyphium.pagepriceparser.utils.Utils;
 
+import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
@@ -103,12 +104,14 @@ public class GraphCommand extends Command {
 
             // Map values
             final Map<String, PriceMap> map = new HashMap<>();
+            final Map<String, Color> colors = new HashMap<>();
             for (Entry<Fuel, PriceMap> entry : prices.entrySet()) {
                 map.put(entry.getKey().getName(), entry.getValue());
+                colors.put(entry.getKey().getName(), entry.getKey().getColor());
             }
 
             // Create an export image
-            final GraphImage image = new GraphImage(data.getName(), map, file);
+            final GraphImage image = new GraphImage(data.getName(), map, colors, file);
             image.draw();
             image.export();
         } else if (args[0].equalsIgnoreCase("fuel")) {
@@ -132,12 +135,14 @@ public class GraphCommand extends Command {
 
             // Map values
             final Map<String, PriceMap> map = new HashMap<>();
+            final Map<String, Color> colors = new HashMap<>();
             for (PriceData priceData : data) {
                 map.put(priceData.getName(), priceData.getPrices(fuel));
+                colors.put(priceData.getName(), priceData.getColor());
             }
 
             // Create an export image
-            final GraphImage image = new GraphImage(fuel.getName(), map, file);
+            final GraphImage image = new GraphImage(fuel.getName(), map, colors, file);
             image.draw();
             image.export();
             image.free();

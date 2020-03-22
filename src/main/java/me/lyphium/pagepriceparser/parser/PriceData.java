@@ -3,6 +3,7 @@ package me.lyphium.pagepriceparser.parser;
 import lombok.Getter;
 import me.lyphium.pagepriceparser.utils.PriceMap;
 
+import java.awt.*;
 import java.io.Serializable;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -18,19 +19,21 @@ public class PriceData implements Serializable {
     private final String name;
     private final String url;
     private final String address;
+    private final Color color;
 
     private final Map<Fuel, PriceMap> prices;
 
-    public PriceData(int id, String name, String url, String address, Map<Fuel, PriceMap> prices) {
+    public PriceData(int id, String name, String url, String address, Color color, Map<Fuel, PriceMap> prices) {
         this.id = id;
         this.name = name;
         this.url = url;
         this.address = address;
+        this.color = color;
         this.prices = prices;
     }
 
-    public PriceData(int id, String name, String url, String address) {
-        this(id, name, url, address, new EnumMap<>(Fuel.class));
+    public PriceData(int id, String name, String url, String address, Color color) {
+        this(id, name, url, address, color, new EnumMap<>(Fuel.class));
     }
 
     public Map<Fuel, Float> getPrices(long time) {
@@ -74,6 +77,7 @@ public class PriceData implements Serializable {
                 ", name='" + name + '\'' +
                 ", url='" + url + '\'' +
                 ", address='" + address + '\'' +
+                ", color=" + color +
                 ", prices=" + prices +
                 '}';
     }

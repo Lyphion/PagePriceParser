@@ -34,6 +34,7 @@ CREATE TABLE `pages`
     `name`    varchar(128)         NOT NULL,
     `url`     varchar(256)         NOT NULL,
     `address` varchar(256)         NOT NULL,
+    `color`   varchar(7)           NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `name` (`name`)
 ) ENGINE = InnoDB
@@ -65,8 +66,9 @@ CREATE TABLE `prices`
 
 CREATE TABLE `fuels`
 (
-    `id`   TINYINT(2) UNSIGNED NOT NULL,
-    `name` varchar(64)         NOT NULL,
+    `id`    TINYINT(2) UNSIGNED NOT NULL,
+    `name`  varchar(64)         NOT NULL,
+    `color` varchar(7)          NOT NULL,
     PRIMARY KEY (`id`),
     UNIQUE KEY `name` (`name`)
 ) ENGINE = InnoDB
@@ -86,14 +88,14 @@ ALTER TABLE `prices`
 --
 -- Defaults der Tabelle `fuels`
 --
-INSERT INTO `fuels` (id, name)
-VALUES (0, 'Diesel'),
-       (1, 'LKW-Diesel'),
-       (2, 'Super E10'),
-       (3, 'Super E5'),
-       (4, 'Super 95'),
-       (5, 'SuperPlus'),
-       (6, 'Autogas');
+INSERT INTO `fuels` (id, name, color)
+VALUES (0, 'Diesel', '#43e81a'),
+       (1, 'LKW-Diesel', '#ba7303'),
+       (2, 'Super E10', '#cbbe28'),
+       (3, 'Super E5', '#651ab0'),
+       (4, 'Super 95', '#e654a0'),
+       (5, 'SuperPlus', '#29a5fa'),
+       (6, 'Autogas', '#e12b49');
 
 COMMIT;
 

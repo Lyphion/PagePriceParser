@@ -181,7 +181,7 @@ public class ConnectionManager extends Thread {
 
                     // Filter if fuel is set
                     if (fuel != null) {
-                        final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
+                        final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress(), priceData.getColor());
                         final PriceMap prices = priceData.getPrices(fuel);
 
                         for (int i = 0; i < prices.size(); i++) {
@@ -207,7 +207,7 @@ public class ConnectionManager extends Thread {
 
                     // Filter if fuel is set
                     if (fuel != null) {
-                        final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress());
+                        final PriceData newPriceData = new PriceData(priceData.getId(), priceData.getName(), priceData.getUrl(), priceData.getAddress(), priceData.getColor());
                         final PriceMap prices = priceData.getPrices(fuel);
 
                         for (int i = 0; i < prices.size(); i++) {

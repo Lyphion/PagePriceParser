@@ -7,6 +7,7 @@ import me.lyphium.pagepriceparser.utils.Pair;
 import me.lyphium.pagepriceparser.utils.PriceMap;
 import me.lyphium.pagepriceparser.utils.Utils;
 
+import java.awt.*;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -46,7 +47,7 @@ public class DatabaseConnection {
     }
 
     public List<PriceData> getPages() {
-        final String sql = "SELECT id, name, url, address from pages;";
+        final String sql = "SELECT id, name, url, address, color from pages;";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql);
@@ -59,8 +60,9 @@ public class DatabaseConnection {
                 final String name = set.getString("name");
                 final String url = set.getString("url");
                 final String address = set.getString("address");
+                final Color color = Color.decode(set.getString("color"));
 
-                final PriceData priceData = new PriceData(id, name, url, address);
+                final PriceData priceData = new PriceData(id, name, url, address, color);
                 data.add(priceData);
             }
 
@@ -100,7 +102,7 @@ public class DatabaseConnection {
     }
 
     public PriceData getPriceData(String name, Timestamp begin, Timestamp end) {
-        final String sql = "SELECT id, url, address FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
+        final String sql = "SELECT id, url, address, color FROM pages WHERE LOWER(name) = LOWER(?) LIMIT 1;";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
@@ -115,8 +117,9 @@ public class DatabaseConnection {
                 final int id = set.getInt("id");
                 final String url = set.getString("url");
                 final String address = set.getString("address");
+                final Color color = Color.decode(set.getString("color"));
 
-                final PriceData data = new PriceData(id, name, url, address);
+                final PriceData data = new PriceData(id, name, url, address, color);
                 loadPriceData(data, begin, end);
 
                 return data;
@@ -153,7 +156,7 @@ public class DatabaseConnection {
     }
 
     public PriceData getPriceData(int id, Timestamp begin, Timestamp end) {
-        final String sql = "SELECT name, url, address FROM pages WHERE id = ? LIMIT 1;";
+        final String sql = "SELECT name, url, address, color FROM pages WHERE id = ? LIMIT 1;";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
@@ -168,8 +171,9 @@ public class DatabaseConnection {
                 final String name = set.getString("name");
                 final String url = set.getString("url");
                 final String address = set.getString("address");
+                final Color color = Color.decode(set.getString("color"));
 
-                final PriceData data = new PriceData(id, name, url, address);
+                final PriceData data = new PriceData(id, name, url, address, color);
                 loadPriceData(data, begin, end);
 
                 return data;
@@ -181,7 +185,7 @@ public class DatabaseConnection {
     }
 
     public List<PriceData> getPriceData(Fuel fuel, Timestamp begin, Timestamp end) {
-        final String sql = "SELECT pa.id, pa.name, pa.url, pa.address, pr.time, pr.value " +
+        final String sql = "SELECT pa.id, pa.name, pa.url, pa.address, pa.color, pr.time, pr.value " +
                 "FROM prices pr INNER JOIN pages pa on pr.pageid = pa.id " +
                 "WHERE pr.fuelid = ? AND pr.time BETWEEN ? AND ?;";
 
@@ -204,8 +208,9 @@ public class DatabaseConnection {
                         final String name = set.getString("name");
                         final String url = set.getString("url");
                         final String address = set.getString("address");
+                        final Color color = Color.decode(set.getString("color"));
 
-                        priceData = new PriceData(id, name, url, address);
+                        priceData = new PriceData(id, name, url, address, color);
                     } else {
                         priceData = data.get(id);
                     }
@@ -275,7 +280,7 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String sql = "INSERT INTO pages (name, url, address) VALUES(?, ?, ?);";
+        final String sql = "INSERT INTO pages (name, url, address, color) VALUES(?, ?, ?, ?);";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
@@ -283,6 +288,9 @@ public class DatabaseConnection {
             statement.setString(1, data.getName());
             statement.setString(2, data.getUrl());
             statement.setString(3, data.getAddress());
+
+            final Color color = data.getColor();
+            statement.setString(4, String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue()));
 
             return statement.executeUpdate() != 0;
         } catch (SQLException e) {

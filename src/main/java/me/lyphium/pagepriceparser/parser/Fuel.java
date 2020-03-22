@@ -2,28 +2,34 @@ package me.lyphium.pagepriceparser.parser;
 
 import lombok.Getter;
 
+import java.awt.*;
+
 @Getter
 public enum Fuel {
 
-    DIESEL("Diesel", "Shell Diesel FuelSave", "Diesel"),
-    LKW_DIESEL("LKW-Diesel", "Shell Truck Diesel", "LKW-Diesel"),
-    SUPER_E10("Super E10", "Shell Super FuelSave E10", "Super E10"),
-    SUPER_E5("Super E5", "Shell Super FuelSave E5", "Super E5"),
-    SUPER_95("Super 95", "Shell Super FuelSave 95", null),
-    SUPER_PLUS("SuperPlus", null, "SuperPlus"),
-    AUTOGAS("Autogas", "Shell Autogas (LPG)", "Autogas");
+    DIESEL(0, "Diesel", "#43e81a", "Shell Diesel FuelSave", "Diesel"),
+    LKW_DIESEL(1, "LKW-Diesel", "#ba7303", "Shell Truck Diesel", "LKW-Diesel"),
+    SUPER_E10(2, "Super E10", "#cbbe28", "Shell Super FuelSave E10", "Super E10"),
+    SUPER_E5(3, "Super E5", "#651ab0", "Shell Super FuelSave E5", "Super E5"),
+    SUPER_95(4, "Super 95", "#e654a0", "Shell Super FuelSave 95", null),
+    SUPER_PLUS(5, "SuperPlus", "#29a5fa", null, "SuperPlus"),
+    AUTOGAS(6, "Autogas", "#e12b49", "Shell Autogas (LPG)", "Autogas");
 
+    private final short id;
     private final String name;
+    private final Color color;
     private final String shellName, cleverName;
 
-    Fuel(String name, String shellName, String cleverName) {
+    Fuel(int id, String name, String color, String shellName, String cleverName) {
+        this.id = (short) id;
         this.name = name;
+        this.color = Color.decode(color);
         this.shellName = shellName;
         this.cleverName = cleverName;
     }
 
-    public int getId() {
-        return ordinal();
+    public short getId() {
+        return id;
     }
 
     public String toString() {
@@ -31,7 +37,12 @@ public enum Fuel {
     }
 
     public static Fuel getById(int id) {
-        return id >= 0 && id < values().length ? values()[id] : null;
+        for (Fuel fuel : values()) {
+            if (fuel.id == id) {
+                return fuel;
+            }
+        }
+        return null;
     }
 
     public static Fuel getByName(String name) {

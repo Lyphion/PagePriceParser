@@ -3,10 +3,12 @@ package me.lyphium.pagepriceparser.utils;
 import lombok.experimental.UtilityClass;
 import me.lyphium.pagepriceparser.parser.PageParser;
 
+import java.awt.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.regex.Matcher;
@@ -133,6 +135,38 @@ public class Utils {
         } catch (Exception e) {
             return null;
         }
+    }
+
+    public Color randomColor() {
+        final Random random = new Random();
+
+        Color color;
+        do {
+            color = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
+        } while (0.21f * color.getRed() + 0.72f * color.getGreen() + 0.07f * color.getBlue() < 60f);
+
+        return color;
+    }
+
+    public Color parseColor(String s) {
+        final Color color;
+        if (s.matches("(#)?[0-9a-fA-F]{6}")) {
+            if (s.startsWith("#")) {
+                color = Color.decode(s);
+            } else {
+                color = Color.decode('#' + s);
+            }
+        } else if (s.matches("(#)?[0-9a-fA-F]{3}")) {
+            final char[] chars = s.toCharArray();
+            if (s.startsWith("#")) {
+                color = Color.decode("#" + chars[1] + chars[1] + chars[2] + chars[2] + chars[3] + chars[3]);
+            } else {
+                color = Color.decode("#" + chars[0] + chars[0] + chars[1] + chars[1] + chars[2] + chars[2]);
+            }
+        } else {
+            return null;
+        }
+        return color;
     }
 
     public String toString(Date date) {

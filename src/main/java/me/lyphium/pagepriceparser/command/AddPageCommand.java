@@ -4,18 +4,20 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.Utils;
 
+import java.awt.*;
 import java.net.URL;
 
 public class AddPageCommand extends Command {
 
     public AddPageCommand() {
-        super("addpage", "Adds a new page to the database", "addpage <name> <url> <address>", new String[]{"add"});
+        super("addpage", "Adds a new page to the database", "addpage <name> <url> <address> [color]", new String[]{"add"});
     }
 
     @Override
     public boolean onCommand(String label, String[] args) {
-        if (args.length != 3) {
+        if (args.length < 3 || args.length > 4) {
             return false;
         }
 
@@ -27,6 +29,7 @@ public class AddPageCommand extends Command {
             return true;
         }
 
+        // Check if url is valid
         try {
             new URL(args[1]).toURI();
         } catch (Exception e) {
@@ -34,8 +37,25 @@ public class AddPageCommand extends Command {
             return true;
         }
 
+        // Parse or create color for page
+        final Color color;
+        if (args.length == 3) {
+            // No color given -> create random one
+            color = Utils.randomColor();
+        } else {
+            // Color given -> parse color
+            color = Utils.parseColor(args[3]);
+
+            if (color == null) {
+                System.err.println("Color must have the form: '#a12c6f' or '#a3b");
+                return true;
+            }
+        }
+
+        System.out.println(color);
+
         // Create page based on input
-        final PriceData data = new PriceData(-1, args[0], args[1], args[2]);
+        final PriceData data = new PriceData(-1, args[0], args[1], args[2], color);
 
         // Add page to database, success will be true, if the pages was added
         final boolean success = database.addPage(data);

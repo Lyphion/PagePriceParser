@@ -64,14 +64,16 @@ public class GraphImage {
 
     private final String name;
     private final Map<String, PriceMap> data;
+    private final Map<String, Color> colors;
 
     private File target;
     private float minValue = Float.MAX_VALUE, maxValue = Float.MIN_VALUE;
     private long minTime = Long.MAX_VALUE, maxTime = Long.MIN_VALUE;
 
-    public GraphImage(String name, Map<String, PriceMap> map, File target) {
+    public GraphImage(String name, Map<String, PriceMap> map, Map<String, Color> colors, File target) {
         this.name = name;
         this.data = map;
+        this.colors = colors;
         this.target = target;
 
         this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
@@ -132,8 +134,8 @@ public class GraphImage {
         int i = 0;
         final int infoOffset = (GRAPH_MAX_X - GRAPH_MIN_X) / data.size();
         for (Entry<String, PriceMap> entry : data.entrySet()) {
-            // Create random bright Color
-            final Color color = randomColor();
+            // Get Color of line
+            final Color color = colors.get(entry.getKey());
 
             // Map Graphpoints
             final int[] x = mapXValues(entry.getValue().keySet(), minTime, maxTime);
@@ -231,14 +233,6 @@ public class GraphImage {
 
     private GradientPaint verticalGradient(Color color, int minY, int maxY) {
         return new GradientPaint(0, minY, color.brighter(), 0, maxY, color.darker());
-    }
-
-    private Color randomColor() {
-        Color color;
-        do {
-            color = new Color(random.nextInt(256), random.nextInt(256), random.nextInt(256));
-        } while (0.21f * color.getRed() + 0.72f * color.getGreen() + 0.07f * color.getBlue() < 60f);
-        return color;
     }
 
     private int calcYPos(float value, float min, float max) {
