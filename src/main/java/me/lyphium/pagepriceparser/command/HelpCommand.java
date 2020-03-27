@@ -1,13 +1,19 @@
 package me.lyphium.pagepriceparser.command;
 
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 
 import java.util.Arrays;
 
+@CommandInfo(
+        description = "Lists all commands",
+        usage = "help [command]",
+        aliases = "?"
+)
 public class HelpCommand extends Command {
 
     public HelpCommand() {
-        super("help", "Lists all commands", "help [command]", new String[]{"?"});
+        super("help");
     }
 
     @Override

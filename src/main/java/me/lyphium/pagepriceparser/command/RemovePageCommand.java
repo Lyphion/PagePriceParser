@@ -4,16 +4,22 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 
 import java.sql.Timestamp;
 
+@CommandInfo(
+        description = "Removes a page and data from the database",
+        usage = "removepage <id/name> [value]",
+        aliases = "remove"
+)
 public class RemovePageCommand extends Command {
 
     private long removeTime = 0;
     private PriceData toBeRemoved = null;
 
     public RemovePageCommand() {
-        super("removepage", "Removes a page and data from the database", "removepage <id/name> [value]", new String[]{"remove"});
+        super("removepage");
     }
 
     @Override

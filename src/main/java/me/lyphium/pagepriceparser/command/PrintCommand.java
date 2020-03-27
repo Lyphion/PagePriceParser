@@ -5,6 +5,7 @@ import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 import me.lyphium.pagepriceparser.utils.PriceMap;
 import me.lyphium.pagepriceparser.utils.Utils;
 
@@ -15,10 +16,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@CommandInfo(
+        description = "Print information from the database",
+        usage = "print <id/name/fuel> <value> [begin] [end] or print pages [pattern]"
+)
 public class PrintCommand extends Command {
 
     public PrintCommand() {
-        super("print", "Print information from the database", "print <id/name/fuel> <value> [begin] [end] or print pages [pattern]");
+        super("print");
     }
 
     @Override

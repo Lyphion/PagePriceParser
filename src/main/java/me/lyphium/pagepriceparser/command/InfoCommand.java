@@ -4,10 +4,7 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
-import me.lyphium.pagepriceparser.utils.Command;
-import me.lyphium.pagepriceparser.utils.Pair;
-import me.lyphium.pagepriceparser.utils.PriceMap;
-import me.lyphium.pagepriceparser.utils.Utils;
+import me.lyphium.pagepriceparser.utils.*;
 
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -15,10 +12,14 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+@CommandInfo(
+        description = "Provide information about database and prices",
+        usage = "info or info <id/name/fuel> <value> [time]"
+)
 public class InfoCommand extends Command {
 
     public InfoCommand() {
-        super("info", "Provide information about database and prices", "info or info <id/name/fuel> <value> [time]");
+        super("info");
     }
 
     @Override
@@ -56,7 +57,7 @@ public class InfoCommand extends Command {
                 builder.append('\n');
             }
 
-            System.out.println(builder.toString());
+            System.out.print(builder.toString());
 
             return true;
         }

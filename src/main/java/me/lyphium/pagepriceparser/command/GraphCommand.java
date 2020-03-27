@@ -15,10 +15,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@CommandInfo(
+        description = "Create a graph of the prices",
+        usage = "graph <id/name/fuel> <value> <file> [begin] [end]"
+)
 public class GraphCommand extends Command {
 
     public GraphCommand() {
-        super("graph", "Create a graph of the prices", "graph <id/name/fuel> <value> <file> [begin] [end]");
+        super("graph");
     }
 
     @Override

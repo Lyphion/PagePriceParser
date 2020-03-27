@@ -2,12 +2,17 @@ package me.lyphium.pagepriceparser.command;
 
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 import me.lyphium.pagepriceparser.utils.Utils;
 
+@CommandInfo(
+        description = "Get or change update delay",
+        usage = "delay [value]"
+)
 public class DelayCommand extends Command {
 
     public DelayCommand() {
-        super("delay", "Get or change update delay", "delay [value]");
+        super("delay");
     }
 
     @Override

@@ -4,15 +4,21 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PriceData;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.awt.*;
 import java.net.URL;
 
+@CommandInfo(
+        description = "Adds a new page to the database",
+        usage = "addpage <name> <url> <address> [color]",
+        aliases = "add"
+)
 public class AddPageCommand extends Command {
 
     public AddPageCommand() {
-        super("addpage", "Adds a new page to the database", "addpage <name> <url> <address> [color]", new String[]{"add"});
+        super("addpage");
     }
 
     @Override

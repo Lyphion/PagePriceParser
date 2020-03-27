@@ -14,27 +14,29 @@ public abstract class Command {
     private final String usage;
     private final String[] aliases;
 
-    public Command(String name, String description, String usage, String[] aliases) {
-        this.name = name.trim().toLowerCase();
-        this.description = description.trim();
-        this.usage = usage.trim();
+    public Command(String name) {
+        this.name = name;
 
-        final List<String> list = new ArrayList<>();
-        for (String alias : aliases) {
-            if (alias != null) {
-                list.add(alias.trim().toLowerCase());
+        final CommandInfo info = getClass().getAnnotation(CommandInfo.class);
+
+        if (info != null) {
+            this.description = info.description();
+            this.usage = info.usage().trim();
+
+            final List<String> list = new ArrayList<>();
+            for (String alias : info.aliases()) {
+                if (alias != null) {
+                    list.add(alias.trim().toLowerCase());
+                }
             }
+            list.sort(String::compareToIgnoreCase);
+
+            this.aliases = list.toArray(new String[0]);
+        } else {
+            this.description = "";
+            this.usage = "";
+            this.aliases = new String[0];
         }
-        list.sort(String::compareToIgnoreCase);
-
-        this.aliases = list.toArray(new String[0]);
-    }
-
-    public Command(String name, String description, String usage) {
-        this.name = name.trim().toLowerCase();
-        this.description = description.trim();
-        this.usage = usage.trim();
-        this.aliases = new String[0];
     }
 
     public abstract boolean onCommand(String label, String[] args);

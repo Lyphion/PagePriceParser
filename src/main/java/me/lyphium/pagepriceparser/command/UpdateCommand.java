@@ -2,11 +2,16 @@ package me.lyphium.pagepriceparser.command;
 
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.CommandInfo;
 
+@CommandInfo(
+        description = "Updates the prices now",
+        usage = "update"
+)
 public class UpdateCommand extends Command {
 
     public UpdateCommand() {
-        super("update", "Updates the prices now", "update");
+        super("update");
     }
 
     @Override
