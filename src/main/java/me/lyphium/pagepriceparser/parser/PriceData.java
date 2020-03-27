@@ -21,15 +21,19 @@ public class PriceData implements Serializable {
     private final String address;
     private final Color color;
 
-    private final Map<Fuel, PriceMap> prices;
+    private final EnumMap<Fuel, PriceMap> prices;
 
-    public PriceData(int id, String name, String url, String address, Color color, Map<Fuel, PriceMap> prices) {
+    public PriceData(int id, String name, String url, String address, Color color, EnumMap<Fuel, PriceMap> prices) {
         this.id = id;
         this.name = name;
         this.url = url;
         this.address = address;
         this.color = color;
         this.prices = prices;
+    }
+
+    public PriceData(int id, String name, String url, String address, Color color, Map<Fuel, PriceMap> prices) {
+        this(id, name, url, address, color, new EnumMap<>(prices));
     }
 
     public PriceData(int id, String name, String url, String address, Color color) {

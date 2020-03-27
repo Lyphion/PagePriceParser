@@ -9,8 +9,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.List;
 import java.util.Random;
 
 @Getter
@@ -63,17 +62,15 @@ public class GraphImage {
     private final Random random;
 
     private final String name;
-    private final Map<String, PriceMap> data;
-    private final Map<String, Color> colors;
+    private final List<Triple<String, PriceMap, Color>> data;
 
     private File target;
     private float minValue = Float.MAX_VALUE, maxValue = Float.MIN_VALUE;
     private long minTime = Long.MAX_VALUE, maxTime = Long.MIN_VALUE;
 
-    public GraphImage(String name, Map<String, PriceMap> map, Map<String, Color> colors, File target) {
+    public GraphImage(String name, List<Triple<String, PriceMap, Color>> data, File target) {
         this.name = name;
-        this.data = map;
-        this.colors = colors;
+        this.data = data;
         this.target = target;
 
         this.image = new BufferedImage(WIDTH, HEIGHT, BufferedImage.TYPE_INT_RGB);
@@ -131,15 +128,15 @@ public class GraphImage {
         }
 
         // Fill Graph
-        int i = 0;
         final int infoOffset = (GRAPH_MAX_X - GRAPH_MIN_X) / data.size();
-        for (Entry<String, PriceMap> entry : data.entrySet()) {
+        for (int i = data.size() - 1; i >= 0; i--) {
+            Triple<String, PriceMap, Color> entry = data.get(i);
             // Get Color of line
-            final Color color = colors.get(entry.getKey());
+            final Color color = entry.getThird();
 
             // Map Graphpoints
-            final int[] x = mapXValues(entry.getValue().keySet(), minTime, maxTime);
-            final int[] y = mapYValues(entry.getValue().values(), minValue, maxValue);
+            final int[] x = mapXValues(entry.getSecond().keySet(), minTime, maxTime);
+            final int[] y = mapYValues(entry.getSecond().values(), minValue, maxValue);
 
             // Map Graphpoints with steps
 //            final int[] tempX = mapXValues(entry.getValue().keySet(), minTime, maxTime);
@@ -158,9 +155,7 @@ public class GraphImage {
 
             // Draw Lineinfo
             drawRect(GRAPH_MIN_X + infoOffset * i + infoOffset / 4 - 10, INFO_LINE_Y - 10, 10, 10, color, false);
-            drawText(GRAPH_MIN_X + infoOffset * i + infoOffset / 4 + 6, INFO_LINE_Y, entry.getKey(), LIGHT_GRAY, ITALIC, 14, Alignment.LEFT);
-
-            i++;
+            drawText(GRAPH_MIN_X + infoOffset * i + infoOffset / 4 + 6, INFO_LINE_Y, entry.getFirst(), LIGHT_GRAY, ITALIC, 14, Alignment.LEFT);
         }
 
         // Draw Axis
@@ -260,7 +255,9 @@ public class GraphImage {
     }
 
     private void calcBorder() {
-        for (PriceMap map : data.values()) {
+        for (Triple<String, PriceMap, Color> entry : data) {
+            final PriceMap map = entry.getSecond();
+
             if (map.isEmpty()) {
                 continue;
             }

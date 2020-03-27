@@ -4,16 +4,13 @@ import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.Fuel;
 import me.lyphium.pagepriceparser.parser.PriceData;
-import me.lyphium.pagepriceparser.utils.Command;
-import me.lyphium.pagepriceparser.utils.GraphImage;
-import me.lyphium.pagepriceparser.utils.PriceMap;
-import me.lyphium.pagepriceparser.utils.Utils;
+import me.lyphium.pagepriceparser.utils.*;
 
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.sql.Timestamp;
-import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -103,15 +100,13 @@ public class GraphCommand extends Command {
             final Map<Fuel, PriceMap> prices = data.getPrices();
 
             // Map values
-            final Map<String, PriceMap> map = new HashMap<>();
-            final Map<String, Color> colors = new HashMap<>();
+            final List<Triple<String, PriceMap, Color>> info = new ArrayList<>();
             for (Entry<Fuel, PriceMap> entry : prices.entrySet()) {
-                map.put(entry.getKey().getName(), entry.getValue());
-                colors.put(entry.getKey().getName(), entry.getKey().getColor());
+                info.add(new Triple<>(entry.getKey().getName(), entry.getValue(), entry.getKey().getColor()));
             }
 
             // Create an export image
-            final GraphImage image = new GraphImage(data.getName(), map, colors, file);
+            final GraphImage image = new GraphImage(data.getName(), info, file);
             image.draw();
             image.export();
         } else if (args[0].equalsIgnoreCase("fuel")) {
@@ -134,15 +129,14 @@ public class GraphCommand extends Command {
             final List<PriceData> data = database.getPriceData(fuel, begin, end);
 
             // Map values
-            final Map<String, PriceMap> map = new HashMap<>();
-            final Map<String, Color> colors = new HashMap<>();
+            final List<Triple<String, PriceMap, Color>> info = new ArrayList<>();
             for (PriceData priceData : data) {
-                map.put(priceData.getName(), priceData.getPrices(fuel));
-                colors.put(priceData.getName(), priceData.getColor());
+                info.add(new Triple<>(priceData.getName(), priceData.getPrices(fuel), priceData.getColor()));
             }
+            info.sort((i1, i2) -> i1.getFirst().compareToIgnoreCase(i2.getFirst()));
 
             // Create an export image
-            final GraphImage image = new GraphImage(fuel.getName(), map, colors, file);
+            final GraphImage image = new GraphImage(fuel.getName(), info, file);
             image.draw();
             image.export();
             image.free();

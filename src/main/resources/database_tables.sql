@@ -89,13 +89,13 @@ ALTER TABLE `prices`
 -- Defaults der Tabelle `fuels`
 --
 INSERT INTO `fuels` (id, name, color)
-VALUES (0, 'Diesel', '#43e81a'),
-       (1, 'LKW-Diesel', '#ba7303'),
-       (2, 'Super E10', '#cbbe28'),
-       (3, 'Super E5', '#651ab0'),
-       (4, 'Super 95', '#e654a0'),
-       (5, 'SuperPlus', '#29a5fa'),
-       (6, 'Autogas', '#e12b49');
+VALUES (0, 'Diesel', '#4b7bec'),
+       (1, 'LKW-Diesel', '#0fb9b1'),
+       (2, 'Super E10', '#20bf6b'),
+       (3, 'Super E5', '#eb3b5a'),
+       (4, 'Super 95', '#fed330'),
+       (5, 'SuperPlus', '#fa8231'),
+       (6, 'Autogas', '#8854d0');
 
 COMMIT;
 

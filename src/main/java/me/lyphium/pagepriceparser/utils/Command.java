@@ -25,6 +25,8 @@ public abstract class Command {
                 list.add(alias.trim().toLowerCase());
             }
         }
+        list.sort(String::compareToIgnoreCase);
+
         this.aliases = list.toArray(new String[0]);
     }
 
