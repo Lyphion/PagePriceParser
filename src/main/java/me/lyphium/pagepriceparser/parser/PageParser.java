@@ -43,35 +43,46 @@ public class PageParser extends Thread {
 
         // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {
+            long time = update();
+
             try {
-                long time = System.currentTimeMillis();
-
-                // Checking if the connection to the database is available, otherwise don't update prices
-                if (!Bot.getInstance().getDatabase().isConnected()) {
-                    System.err.println("Can't update database! No connection available");
-                } else {
-                    System.out.println("Updating Prices...");
-
-                    // Update prices
-                    update();
-
-                    System.out.println("Finished: Updated the Prices (" + (System.currentTimeMillis() - time) + "ms)");
-                }
-
                 // Calculate sleeping time from delay
-                time = delay - (System.currentTimeMillis() - time);
+                time = delay - time;
                 if (time > 0) {
                     Thread.sleep(time);
                 }
             } catch (InterruptedException e) {
                 // Thrown when PageParseThread is shutting down
-            } catch (Exception e) {
-                e.printStackTrace();
             }
         }
     }
 
-    public synchronized void update() {
+    public synchronized long update() {
+        long time = System.currentTimeMillis();
+
+        try {
+            // Checking if the connection to the database is available, otherwise don't update prices
+            if (!Bot.getInstance().getDatabase().isConnected()) {
+                System.err.println("Can't update database! No connection available");
+                return System.currentTimeMillis() - time;
+            }
+
+            System.out.println("Updating Prices...");
+
+            // Update prices
+            handleUpdate();
+
+            time = System.currentTimeMillis() - time;
+            System.out.println("Finished: Updated the Prices (" + time + "ms)");
+
+            return time;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return System.currentTimeMillis() - time;
+        }
+    }
+
+    private synchronized void handleUpdate() {
         final DatabaseConnection database = Bot.getInstance().getDatabase();
 
         // Checking if the connection to the database is available

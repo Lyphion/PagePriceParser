@@ -39,7 +39,7 @@ public class AddPageCommand extends Command {
         try {
             new URL(args[1]).toURI();
         } catch (Exception e) {
-            System.err.println("No a valid url!");
+            System.err.println("Not a valid url!");
             return true;
         }
 
@@ -57,8 +57,6 @@ public class AddPageCommand extends Command {
                 return true;
             }
         }
-
-        System.out.println(color);
 
         // Create page based on input
         final PriceData data = new PriceData(-1, args[0], args[1], args[2], color);

@@ -280,7 +280,7 @@ public class DatabaseConnection {
             return false;
         }
 
-        final String sql = "INSERT INTO pages (name, url, address, color) VALUES(?, ?, ?, ?);";
+        final String sql = "INSERT INTO pages (name, url, address, color) VALUES (?, ?, ?, ?);";
 
         try (Connection con = source.getConnection();
              PreparedStatement statement = con.prepareStatement(sql)) {
