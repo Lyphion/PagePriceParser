@@ -18,7 +18,7 @@ import java.util.stream.IntStream;
 @UtilityClass
 public class Utils {
 
-    private final SimpleDateFormat format = new SimpleDateFormat("dd.MM.YYYY HH:mm:ss");
+    private final SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
     private final Map<String, Long> delayTable = new HashMap<String, Long>() {{
         put("[\\d]+(?=s)", 1L);

@@ -8,6 +8,11 @@ import me.lyphium.pagepriceparser.parser.PageParser;
 import me.lyphium.pagepriceparser.utils.Command;
 import me.lyphium.pagepriceparser.utils.Utils;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Properties;
 import java.util.Scanner;
 
 @Getter
@@ -49,7 +54,7 @@ public class Bot {
         }
 
         // Setting up Database Connection
-        this.database = new DatabaseConnection("127.0.0.1", 3306, "FuelPrices", "root", "");
+        this.database = loadDatabase();
 
         // Creating Parse Thread
         this.parser = new PageParser(delay);
@@ -127,6 +132,58 @@ public class Bot {
         Command.registerCommand(new PrintCommand());
         Command.registerCommand(new RemovePageCommand());
         Command.registerCommand(new UpdateCommand());
+    }
+
+    private DatabaseConnection loadDatabase() {
+        final File databaseFile = new File("database.properties");
+
+        // Check if file doesn't exists
+        if (!databaseFile.exists()) {
+            System.out.println("No database file found. Using default settings");
+
+            // Copy deafult config file to change it manually
+            try {
+                Files.copy(getClass().getResourceAsStream("/database.properties"), databaseFile.toPath());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // Using default values
+            return new DatabaseConnection("127.0.0.1", 3306, "fuelprices", "root", "password");
+        } else {
+            System.out.println("Database file found. Using custom settings");
+
+            // Reading config file
+            try (BufferedReader reader = Files.newBufferedReader(databaseFile.toPath())) {
+                // Loading properties
+                final Properties props = new Properties();
+                props.load(reader);
+
+                final String host = props.getProperty("host", "127.0.0.1");
+
+                final String portString = props.getProperty("port", "3306");
+
+                final int port;
+                // Check if port is valid
+                if (portString.matches("[0-9]{1,5}")) {
+                    port = Integer.parseUnsignedInt(portString);
+                } else {
+                    System.err.println("Invalid port. Using port '3306' instead");
+                    port = 3306;
+                }
+
+                final String database = props.getProperty("database", "fuelprices");
+                final String username = props.getProperty("username", "root");
+                final String password = props.getProperty("password", "password");
+
+                // Creating and return DatabaseConnection Object
+                return new DatabaseConnection(host, port, database, username, password);
+            } catch (IOException e) {
+                System.err.println("Invalid database file. Please check");
+                e.printStackTrace();
+                return null;
+            }
+        }
     }
 
 }
