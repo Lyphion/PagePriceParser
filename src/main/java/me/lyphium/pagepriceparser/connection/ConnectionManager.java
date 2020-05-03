@@ -33,17 +33,6 @@ public class ConnectionManager extends Thread {
     public ConnectionManager(int port) {
         this.port = port;
 
-        if (port < 0) {
-            return;
-        }
-
-        try {
-            // Setting up SocketServer to receive Client requests
-            this.server = new ServerSocket(port);
-        } catch (IOException e) {
-            System.err.println("Couldn't setup ServerSocket");
-        }
-
         setName("ConnectionManager");
         setDaemon(true);
     }
@@ -53,6 +42,13 @@ public class ConnectionManager extends Thread {
         if (port < 0) {
             System.out.println("Client Manager disabled");
             return;
+        }
+
+        try {
+            // Setting up SocketServer to receive Client requests
+            this.server = new ServerSocket(port);
+        } catch (IOException e) {
+            System.err.println("Couldn't setup ServerSocket");
         }
 
         System.out.println("Started Client Manager");

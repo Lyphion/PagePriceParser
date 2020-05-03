@@ -1,13 +1,26 @@
 package me.lyphium.pagepriceparser.utils;
 
-import java.io.OutputStream;
-import java.io.PrintStream;
+import lombok.Getter;
+import lombok.Setter;
+
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 
 public class PrettyPrintStream extends PrintStream {
 
     private static final Date DATE = new Date();
     private static final Object LOCK = new Object();
+
+    private static final File LOG_FILE = new File(
+            "logs",
+            new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss'.log'").format(DATE)
+    );
+
+    @Getter
+    @Setter
+    private static boolean log = true;
 
     private static PrettyPrintStream cur = null;
     private static boolean empty = true;
@@ -63,6 +76,8 @@ public class PrettyPrintStream extends PrintStream {
     public void println(String x) {
         synchronized (LOCK) {
             super.println(x);
+            log("\n");
+
             empty = true;
             cur = null;
         }
@@ -115,7 +130,9 @@ public class PrettyPrintStream extends PrintStream {
 
         synchronized (LOCK) {
             if (cur != null && cur != this) {
+                log("\n");
                 super.write('\n');
+
                 empty = true;
             }
 
@@ -126,7 +143,9 @@ public class PrettyPrintStream extends PrintStream {
 
             if (split.length == 0) {
                 if (empty) {
+                    log(prefix);
                     super.print(prefix);
+
                     empty = false;
                 }
                 return;
@@ -147,7 +166,10 @@ public class PrettyPrintStream extends PrintStream {
                 cur = null;
             }
 
-            super.print(builder.toString());
+            final String text = builder.toString();
+
+            log(text);
+            super.print(text);
         }
     }
 
@@ -156,7 +178,30 @@ public class PrettyPrintStream extends PrintStream {
         print(String.valueOf(obj));
     }
 
-    public String getPrefix() {
+    private void log(String s) {
+        if (!log) {
+            return;
+        }
+
+        if (!LOG_FILE.exists()) {
+            try {
+                LOG_FILE.getParentFile().mkdir();
+                LOG_FILE.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        try (FileOutputStream fos = new FileOutputStream(LOG_FILE, true);
+             OutputStreamWriter osw = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
+             BufferedWriter writer = new BufferedWriter(osw)) {
+            writer.write(s);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private String getPrefix() {
         DATE.setTime(System.currentTimeMillis());
         return String.format("[%tT] [%s]: ", DATE, prefix);
     }

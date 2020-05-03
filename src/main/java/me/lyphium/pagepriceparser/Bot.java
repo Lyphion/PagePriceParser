@@ -6,6 +6,7 @@ import me.lyphium.pagepriceparser.connection.ConnectionManager;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.parser.PageParser;
 import me.lyphium.pagepriceparser.utils.Command;
+import me.lyphium.pagepriceparser.utils.PrettyPrintStream;
 import me.lyphium.pagepriceparser.utils.Utils;
 
 import java.io.BufferedReader;
@@ -51,10 +52,11 @@ public class Bot {
                     port = Integer.parseInt(args[i + 1]);
                 }
             }
+            // Disable log file
+            else if (part.equals("-nl")) {
+                PrettyPrintStream.setLog(false);
+            }
         }
-
-        // Setting up Database Connection
-        this.database = loadDatabase();
 
         // Creating Parse Thread
         this.parser = new PageParser(delay);
@@ -66,6 +68,13 @@ public class Bot {
     public void start() {
         this.running = true;
         System.out.println("Starting Bot...");
+
+        if (!PrettyPrintStream.isLog()) {
+            System.out.println("Log disabled");
+        }
+
+        // Setting up Database Connection
+        this.database = loadDatabase();
 
         // Test for valid database connection
         if (!database.isConnected()) {
