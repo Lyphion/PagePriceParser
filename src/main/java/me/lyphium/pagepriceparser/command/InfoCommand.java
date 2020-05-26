@@ -14,7 +14,8 @@ import java.util.Map;
 
 @CommandInfo(
         description = "Provide information about database and prices",
-        usage = "info or info <id/name/fuel> <value> [time]"
+        shortUsage = "info <id/name/fuel> <value>",
+        usage = "info or info <id/name/fuel> <value> [time] [pattern]"
 )
 public class InfoCommand extends Command {
 
@@ -24,7 +25,7 @@ public class InfoCommand extends Command {
 
     @Override
     public boolean onCommand(String label, String[] args) {
-        if (args.length == 1 || args.length > 3) {
+        if (args.length == 1 || args.length > 4) {
             return false;
         }
 
@@ -64,7 +65,7 @@ public class InfoCommand extends Command {
 
         // Parse time
         final Timestamp timestamp;
-        if (args.length == 3) {
+        if (args.length > 2) {
             timestamp = Utils.toTimestamp(args[2]);
 
             if (timestamp == null) {
@@ -125,6 +126,12 @@ public class InfoCommand extends Command {
             builder.append(String.format("Address: %s\n\n", data.getAddress()));
 
             final Map<Fuel, PriceMap> prices = data.getPrices();
+
+            // Apply pattern if exists
+            if (args.length > 3) {
+                final String pattern = args[3];
+                prices.keySet().removeIf(f -> !f.getName().matches(pattern));
+            }
 
             // Check if List of PriceData contains Price Information
             if (prices.size() == 0 || prices.values().stream().map(PriceMap::size).count() == 0) {
@@ -234,6 +241,12 @@ public class InfoCommand extends Command {
              */
 
             final List<PriceData> data = database.getPriceData(fuel, new Timestamp(0), new Timestamp(System.currentTimeMillis()));
+
+            // Apply pattern if exists
+            if (args.length > 3) {
+                final String pattern = args[3];
+                data.removeIf(s -> !s.getName().matches(pattern));
+            }
 
             // Building the head of the Information page
             final StringBuilder builder = new StringBuilder("--------- Information Page ---------\n");

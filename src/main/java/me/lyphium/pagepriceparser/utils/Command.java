@@ -11,7 +11,7 @@ public abstract class Command {
 
     private final String name;
     private final String description;
-    private final String usage;
+    private final String usage, shortUsage;
     private final String[] aliases;
 
     public Command(String name) {
@@ -21,7 +21,8 @@ public abstract class Command {
 
         if (info != null) {
             this.description = info.description();
-            this.usage = info.usage().trim();
+            this.usage = info.usage().trim().isEmpty() ? name : info.usage().trim();
+            this.shortUsage = info.shortUsage().trim().isEmpty() ? usage : info.shortUsage().trim();
 
             final List<String> list = new ArrayList<>();
             for (String alias : info.aliases()) {
@@ -34,7 +35,7 @@ public abstract class Command {
             this.aliases = list.toArray(new String[0]);
         } else {
             this.description = "";
-            this.usage = "";
+            this.usage = shortUsage = "";
             this.aliases = new String[0];
         }
     }

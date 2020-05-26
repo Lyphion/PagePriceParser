@@ -13,6 +13,8 @@ public @interface CommandInfo {
 
     String usage() default "";
 
+    String shortUsage() default "";
+
     String[] aliases() default {};
 
 }

@@ -10,7 +10,7 @@ import java.sql.Timestamp;
 
 @CommandInfo(
         description = "Removes a page and data from the database",
-        usage = "removepage <id/name> [value]",
+        usage = "removepage <id/name> <value>",
         aliases = "remove"
 )
 public class RemovePageCommand extends Command {

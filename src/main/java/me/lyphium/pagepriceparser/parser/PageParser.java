@@ -11,27 +11,30 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@Getter
 public class PageParser extends Thread {
 
     public static final long DEFAULT_DELAY = 60 * 60 * 1000;
 
-    @Getter
     @Setter
     private long delay;
+    private final long startTime;
 
-    public PageParser(long delay) {
+    public PageParser(long delay, long startTime) {
         this.delay = delay;
+        this.startTime = startTime;
 
         setName("PageParser");
         setDaemon(true);
     }
 
-    @Override
+    @SuppressWarnings("BusyWait")
     public void run() {
         if (delay < 0) {
             System.out.println("Automatic Page Parser disabled");
@@ -40,6 +43,15 @@ public class PageParser extends Thread {
 
         System.out.println("Started Page Parser");
         System.out.println("Checking Pages every " + (delay / 1000) + "sec");
+
+        if (startTime > System.currentTimeMillis()) {
+            System.out.println("First Check: " + Utils.toString(new Date(startTime)));
+            try {
+                Thread.sleep(startTime - System.currentTimeMillis());
+            } catch (InterruptedException e) {
+                // Thrown when PageParseThread is shutting down
+            }
+        }
 
         // Checking if the bot is still running
         while (Bot.getInstance().isRunning()) {

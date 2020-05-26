@@ -7,6 +7,7 @@ import java.awt.*;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
@@ -68,6 +69,15 @@ public class GraphImage {
     private float minValue = Float.MAX_VALUE, maxValue = Float.MIN_VALUE;
     private long minTime = Long.MAX_VALUE, maxTime = Long.MIN_VALUE;
 
+    private SimpleDateFormat optionalFormat;
+    private String subTitle;
+
+    public GraphImage(String name, List<Triple<String, PriceMap, Color>> data, File target, SimpleDateFormat format, String subTitle) {
+        this(name, data, target);
+        this.optionalFormat = format;
+        this.subTitle = subTitle;
+    }
+
     public GraphImage(String name, List<Triple<String, PriceMap, Color>> data, File target) {
         this.name = name;
         this.data = data;
@@ -97,8 +107,14 @@ public class GraphImage {
         // Draw Title with Name and Time
         drawText(WIDTH / 2, 50, name, ORANGE, BOLD, 30, Alignment.CENTER);
 
-        // Create and draw timespan
-        final String times = Utils.toString(new Date(minTime)) + " Uhr - " + Utils.toString(new Date(maxTime)) + " Uhr";
+        final String times;
+        if (subTitle != null) {
+            // Use existing subtitle
+            times = subTitle;
+        } else {
+            // Create and draw timespan
+            times = getDateString(new Date(minTime)) + " Uhr - " + getDateString(new Date(maxTime)) + " Uhr";
+        }
         drawText(WIDTH / 2, 75, times, CONCRETE, ITALIC, 20, Alignment.CENTER);
 
         // Draw Timestamps
@@ -106,7 +122,7 @@ public class GraphImage {
         final long stepTime = (maxTime - minTime) / (GRAPH_MAX_X - GRAPH_MIN_X) * GRAPH_TIME_OFFSET;
         for (int x = GRAPH_MIN_X + GRAPH_TIME_OFFSET, i = 1; x <= GRAPH_MAX_X; x += GRAPH_TIME_OFFSET, i++) {
             time.setTime(minTime + stepTime * i);
-            drawText(x, GRAPH_MAX_Y + 15, Utils.toString(time), ASBESTOS, REGULAR, 12, -Math.PI / 5, Alignment.RIGHT);
+            drawText(x, GRAPH_MAX_Y + 15, getDateString(time), ASBESTOS, REGULAR, 12, -Math.PI / 5, Alignment.RIGHT);
         }
 
         // Fixed stepValue
@@ -306,6 +322,10 @@ public class GraphImage {
                 valueOut[i * 2 + 1] = valueIn[i];
             }
         }
+    }
+
+    private String getDateString(Date date) {
+        return optionalFormat == null ? Utils.toString(date) : optionalFormat.format(date);
     }
 
     public void export() {

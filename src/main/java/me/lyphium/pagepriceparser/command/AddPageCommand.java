@@ -12,6 +12,7 @@ import java.net.URL;
 
 @CommandInfo(
         description = "Adds a new page to the database",
+        shortUsage = "addpage <name> <url> <address>",
         usage = "addpage <name> <url> <address> [color]",
         aliases = "add"
 )

@@ -125,12 +125,21 @@ public class Utils {
     }
 
     public Timestamp toTimestamp(String s) {
+        if (s.equalsIgnoreCase("now")) {
+            return new Timestamp(System.currentTimeMillis());
+        } else if (s.equalsIgnoreCase("today")) {
+            final Calendar cal = Calendar.getInstance();
+
+            cal.set(Calendar.HOUR_OF_DAY, 0);
+            cal.set(Calendar.MINUTE, 0);
+            cal.set(Calendar.SECOND, 0);
+            cal.set(Calendar.MILLISECOND, 0);
+
+            return new Timestamp(cal.getTimeInMillis());
+        } else if (s.matches("(-)?(\\d)+")) {
+            return new Timestamp(Long.parseLong(s));
+        }
         try {
-            if (s.equalsIgnoreCase("now")) {
-                return new Timestamp(System.currentTimeMillis());
-            } else if (s.matches("(-)?(\\d)+")) {
-                return new Timestamp(Long.parseLong(s));
-            }
             return Timestamp.valueOf(s);
         } catch (Exception e) {
             return null;

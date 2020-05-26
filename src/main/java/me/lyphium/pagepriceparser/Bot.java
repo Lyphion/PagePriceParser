@@ -13,6 +13,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Calendar;
 import java.util.Properties;
 import java.util.Scanner;
 
@@ -39,18 +40,45 @@ public class Bot {
         // Parsing start arguments
         long delay = PageParser.DEFAULT_DELAY;
         int port = ConnectionManager.DEFAULT_PORT;
+        long startTime = 0;
         for (int i = 0; i < args.length; i++) {
             final String part = args[i];
 
             // Parsing the delay time between checks
             if (part.equals("-d") && i < args.length - 1) {
                 delay = Utils.calculateDelay(args[i + 1]);
+                i++;
             }
             // Parsing the Client Connection port
             else if (part.equals("-p") && i < args.length - 1) {
-                if (args[i + 1].matches("(-)?(\\d){1,5}")) {
-                    port = Integer.parseInt(args[i + 1]);
+                if (!args[i + 1].matches("(-)?(\\d){1,5}")) {
+                    continue;
                 }
+
+                port = Integer.parseInt(args[i + 1]);
+                i++;
+            }
+            // Set first update
+            else if (part.equals("-st") && i < args.length - 1) {
+                final String t = args[i + 1];
+                if (!t.matches("([01]\\d|2[0-3]):([0-5]\\d):([0-5]\\d)")) {
+                    continue;
+                }
+
+                final String[] split = t.split(":");
+
+                final Calendar cal = Calendar.getInstance();
+                cal.set(Calendar.HOUR_OF_DAY, Integer.parseUnsignedInt(split[0]));
+                cal.set(Calendar.MINUTE, Integer.parseUnsignedInt(split[1]));
+                cal.set(Calendar.SECOND, Integer.parseUnsignedInt(split[2]));
+
+                if (cal.getTimeInMillis() < System.currentTimeMillis()) {
+                    cal.add(Calendar.DATE, 1);
+                }
+
+                startTime = cal.getTimeInMillis();
+
+                i++;
             }
             // Disable log file
             else if (part.equals("-nl")) {
@@ -59,7 +87,7 @@ public class Bot {
         }
 
         // Creating Parse Thread
-        this.parser = new PageParser(delay);
+        this.parser = new PageParser(delay, startTime);
 
         // Creating Client Managager
         this.connectionManager = new ConnectionManager(port);
@@ -134,11 +162,11 @@ public class Bot {
     private void registerCommands() {
         // Register all commands
         Command.registerCommand(new AddPageCommand());
+        Command.registerCommand(new DataCommand());
         Command.registerCommand(new DelayCommand());
         Command.registerCommand(new GraphCommand());
         Command.registerCommand(new HelpCommand());
         Command.registerCommand(new InfoCommand());
-        Command.registerCommand(new PrintCommand());
         Command.registerCommand(new RemovePageCommand());
         Command.registerCommand(new UpdateCommand());
     }

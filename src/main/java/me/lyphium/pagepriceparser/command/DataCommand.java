@@ -17,18 +17,19 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @CommandInfo(
-        description = "Print information from the database",
-        usage = "print <id/name/fuel> <value> [begin] [end] or print pages [pattern]"
+        description = "Print prices or page information from the database",
+        shortUsage = "data <id/name/fuel> <value>",
+        usage = "data <id/name/fuel> <value> [begin] [end] [pattern] or data pages [pattern]"
 )
-public class PrintCommand extends Command {
+public class DataCommand extends Command {
 
-    public PrintCommand() {
-        super("print");
+    public DataCommand() {
+        super("data");
     }
 
     @Override
     public boolean onCommand(String label, String[] args) {
-        if (args.length == 0 || args.length > 4 || (args.length == 1 && !args[0].equalsIgnoreCase("pages"))) {
+        if (args.length == 0 || args.length > 5 || (args.length == 1 && !args[0].equalsIgnoreCase("pages"))) {
             return false;
         }
 
@@ -109,6 +110,12 @@ public class PrintCommand extends Command {
 
             // Price Informations by Fuel and Time
             final Map<Fuel, PriceMap> prices = data.getPrices();
+
+            // Apply pattern if exists
+            if (args.length > 4) {
+                final String pattern = args[4];
+                prices.keySet().removeIf(f -> !f.getName().matches(pattern));
+            }
 
             // Calculation the first and last Price Entry
             long min = System.currentTimeMillis(), max = 0;
@@ -214,6 +221,12 @@ public class PrintCommand extends Command {
 
             // Get List of PriceData based on the fuel
             final List<PriceData> data = database.getPriceData(fuel, begin, end);
+
+            // Apply pattern if exists
+            if (args.length > 4) {
+                final String pattern = args[4];
+                data.removeIf(s -> !s.getName().matches(pattern));
+            }
 
             /*
              *  Fuel:  -fuel-
@@ -337,7 +350,7 @@ public class PrintCommand extends Command {
             final List<PriceData> pages = database.getPages();
 
             // Filtering all pages with don't match the optimal pattern
-            if (args.length == 2) {
+            if (args.length > 1) {
                 final String pattern = args[1];
                 pages.removeIf(s -> !s.getName().matches(pattern));
             }

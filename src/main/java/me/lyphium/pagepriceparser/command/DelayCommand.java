@@ -30,8 +30,10 @@ public class DelayCommand extends Command {
         if (args.length == 0) {
             if (delay < 0) {
                 System.out.println("Page parser is disabled");
-            } else {
+            } else if (delay < 1000) {
                 System.out.println("Current delay: " + delay + "ms");
+            } else {
+                System.out.println("Current delay: " + (delay / 1000) + "s");
             }
         } else {
             if (delay < 0) {
@@ -48,8 +50,10 @@ public class DelayCommand extends Command {
             if (delay < 0) {
                 bot.getParser().cancel();
                 System.out.println("Shut down Page Parser");
-            } else {
+            } else if (delay < 1000) {
                 System.out.println("New delay: " + delay + "ms");
+            } else {
+                System.out.println("New delay: " + (delay / 1000) + "s");
             }
         }
 
