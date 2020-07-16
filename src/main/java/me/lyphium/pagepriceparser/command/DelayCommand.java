@@ -3,11 +3,10 @@ package me.lyphium.pagepriceparser.command;
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.utils.Command;
 import me.lyphium.pagepriceparser.utils.CommandInfo;
-import me.lyphium.pagepriceparser.utils.Utils;
 
 @CommandInfo(
-        description = "Get or change update delay",
-        usage = "delay [value]"
+        description = "Get delay time",
+        usage = "delay"
 )
 public class DelayCommand extends Command {
 
@@ -17,7 +16,7 @@ public class DelayCommand extends Command {
 
     @Override
     public boolean onCommand(String label, String[] args) {
-        if (args.length > 1) {
+        if (args.length > 0) {
             return false;
         }
 
@@ -26,35 +25,12 @@ public class DelayCommand extends Command {
         // Get current delay
         long delay = bot.getParser().getDelay();
 
-        // Check if only request or delay change
-        if (args.length == 0) {
-            if (delay < 0) {
-                System.out.println("Page parser is disabled");
-            } else if (delay < 1000) {
-                System.out.println("Current delay: " + delay + "ms");
-            } else {
-                System.out.println("Current delay: " + (delay / 1000) + "s");
-            }
+        if (delay < 0) {
+            System.out.println("Page parser is disabled");
+        } else if (delay < 1000) {
+            System.out.println("Current delay: " + delay + "ms");
         } else {
-            if (delay < 0) {
-                System.out.println("Page parser is disabled. To change delay restart Bot");
-                return true;
-            }
-
-            // Parse new delay as a number or time string
-            delay = Utils.calculateDelay(args[0]);
-
-            // Set new delay
-            bot.getParser().setDelay(delay);
-
-            if (delay < 0) {
-                bot.getParser().cancel();
-                System.out.println("Shut down Page Parser");
-            } else if (delay < 1000) {
-                System.out.println("New delay: " + delay + "ms");
-            } else {
-                System.out.println("New delay: " + (delay / 1000) + "s");
-            }
+            System.out.println("Current delay: " + (delay / 1000) + "s");
         }
 
         return true;

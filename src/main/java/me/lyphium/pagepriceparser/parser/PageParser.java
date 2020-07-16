@@ -16,9 +16,12 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Getter
-public class PageParser extends Thread {
+public class PageParser {
 
     public static final long DEFAULT_DELAY = 60 * 60 * 1000;
 
@@ -26,16 +29,14 @@ public class PageParser extends Thread {
     private long delay;
     private final long startTime;
 
+    private final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
+
     public PageParser(long delay, long startTime) {
         this.delay = delay;
         this.startTime = startTime;
-
-        setName("PageParser");
-        setDaemon(true);
     }
 
-    @SuppressWarnings("BusyWait")
-    public void run() {
+    public void start() {
         if (delay < 0) {
             System.out.println("Automatic Page Parser disabled");
             return;
@@ -44,39 +45,30 @@ public class PageParser extends Thread {
         System.out.println("Started Page Parser");
         System.out.println("Checking Pages every " + (delay / 1000) + "sec");
 
+        final long startDelay;
         if (startTime > System.currentTimeMillis()) {
             System.out.println("First Check: " + Utils.toString(new Date(startTime)));
-            try {
-                Thread.sleep(startTime - System.currentTimeMillis());
-            } catch (InterruptedException e) {
-                // Thrown when PageParseThread is shutting down
-            }
+            startDelay = startTime - System.currentTimeMillis();
+        } else {
+            startDelay = 0;
         }
 
-        // Checking if the bot is still running
-        while (Bot.getInstance().isRunning()) {
-            long time = update();
-
-            try {
-                // Calculate sleeping time from delay
-                time = delay - time;
-                if (time > 0) {
-                    Thread.sleep(time);
-                }
-            } catch (InterruptedException e) {
-                // Thrown when PageParseThread is shutting down
-            }
-        }
+        service.scheduleAtFixedRate(
+                this::update,
+                startDelay,
+                delay,
+                TimeUnit.MILLISECONDS
+        );
     }
 
-    public synchronized long update() {
+    public synchronized void update() {
         long time = System.currentTimeMillis();
 
         try {
             // Checking if the connection to the database is available, otherwise don't update prices
             if (!Bot.getInstance().getDatabase().isConnected()) {
                 System.err.println("Can't update database! No connection available");
-                return System.currentTimeMillis() - time;
+                return;
             }
 
             System.out.println("Updating Prices...");
@@ -86,11 +78,8 @@ public class PageParser extends Thread {
 
             time = System.currentTimeMillis() - time;
             System.out.println("Finished: Updated the Prices (" + time + "ms)");
-
-            return time;
         } catch (Exception e) {
             e.printStackTrace();
-            return System.currentTimeMillis() - time;
         }
     }
 
@@ -140,7 +129,7 @@ public class PageParser extends Thread {
     }
 
     public synchronized void cancel() {
-        interrupt();
+        service.shutdown();
 
         if (delay < 0) {
             return;
