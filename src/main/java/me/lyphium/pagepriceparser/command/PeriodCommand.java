@@ -5,13 +5,13 @@ import me.lyphium.pagepriceparser.utils.Command;
 import me.lyphium.pagepriceparser.utils.CommandInfo;
 
 @CommandInfo(
-        description = "Get delay time",
-        usage = "delay"
+        description = "Get page check period time",
+        usage = "period"
 )
-public class DelayCommand extends Command {
+public class PeriodCommand extends Command {
 
-    public DelayCommand() {
-        super("delay");
+    public PeriodCommand() {
+        super("period");
     }
 
     @Override
@@ -22,15 +22,15 @@ public class DelayCommand extends Command {
 
         final Bot bot = Bot.getInstance();
 
-        // Get current delay
-        long delay = bot.getParser().getDelay();
+        // Get current period
+        final long period = bot.getParser().getPeriod();
 
-        if (delay < 0) {
+        if (period < 0) {
             System.out.println("Page parser is disabled");
-        } else if (delay < 1000) {
-            System.out.println("Current delay: " + delay + "ms");
+        } else if (period < 1000) {
+            System.out.println("Checking Pages every " + period + "ms");
         } else {
-            System.out.println("Current delay: " + (delay / 1000) + "s");
+            System.out.println("Checking Pages every " + (period / 1000) + "sec");
         }
 
         return true;

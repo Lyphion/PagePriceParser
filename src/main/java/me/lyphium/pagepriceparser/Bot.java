@@ -38,19 +38,19 @@ public class Bot {
         registerCommands();
 
         // Parsing start arguments
-        long delay = PageParser.DEFAULT_DELAY;
+        long period = PageParser.DEFAULT_PERIOD;
         int port = ConnectionManager.DEFAULT_PORT;
         long startTime = 0;
         for (int i = 0; i < args.length; i++) {
             final String part = args[i];
 
             // Parsing the delay time between checks
-            if (part.equals("-d") && i < args.length - 1) {
-                delay = Utils.calculateDelay(args[i + 1]);
+            if (part.equals("-period") && i < args.length - 1) {
+                period = Utils.calculatePeriod(args[i + 1]);
                 i++;
             }
             // Parsing the Client Connection port
-            else if (part.equals("-p") && i < args.length - 1) {
+            else if (part.equals("-port") && i < args.length - 1) {
                 if (!args[i + 1].matches("(-)?(\\d){1,5}")) {
                     continue;
                 }
@@ -87,7 +87,7 @@ public class Bot {
         }
 
         // Creating Parse Thread
-        this.parser = new PageParser(delay, startTime);
+        this.parser = new PageParser(period, startTime);
 
         // Creating Client Managager
         this.connectionManager = new ConnectionManager(port);
@@ -163,10 +163,10 @@ public class Bot {
         // Register all commands
         Command.registerCommand(new AddPageCommand());
         Command.registerCommand(new DataCommand());
-        Command.registerCommand(new DelayCommand());
         Command.registerCommand(new GraphCommand());
         Command.registerCommand(new HelpCommand());
         Command.registerCommand(new InfoCommand());
+        Command.registerCommand(new PeriodCommand());
         Command.registerCommand(new RemovePageCommand());
         Command.registerCommand(new UpdateCommand());
     }

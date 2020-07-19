@@ -1,7 +1,6 @@
 package me.lyphium.pagepriceparser.parser;
 
 import lombok.Getter;
-import lombok.Setter;
 import me.lyphium.pagepriceparser.Bot;
 import me.lyphium.pagepriceparser.database.DatabaseConnection;
 import me.lyphium.pagepriceparser.utils.PriceMap;
@@ -20,30 +19,34 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-@Getter
 public class PageParser {
 
-    public static final long DEFAULT_DELAY = 60 * 60 * 1000;
+    public static final long DEFAULT_PERIOD = 60 * 60 * 1000;
 
-    @Setter
-    private long delay;
+    @Getter
+    private final long period;
+    @Getter
     private final long startTime;
 
     private final ScheduledExecutorService service = Executors.newScheduledThreadPool(1);
 
-    public PageParser(long delay, long startTime) {
-        this.delay = delay;
+    public PageParser(long period, long startTime) {
+        this.period = period;
         this.startTime = startTime;
     }
 
     public void start() {
-        if (delay < 0) {
+        if (period < 0) {
             System.out.println("Automatic Page Parser disabled");
             return;
         }
 
         System.out.println("Started Page Parser");
-        System.out.println("Checking Pages every " + (delay / 1000) + "sec");
+        if (period < 1000) {
+            System.out.println("Checking Pages every " + period + "ms");
+        } else {
+            System.out.println("Checking Pages every " + (period / 1000) + "sec");
+        }
 
         final long startDelay;
         if (startTime > System.currentTimeMillis()) {
@@ -56,7 +59,7 @@ public class PageParser {
         service.scheduleAtFixedRate(
                 this::update,
                 startDelay,
-                delay,
+                period,
                 TimeUnit.MILLISECONDS
         );
     }
@@ -131,7 +134,7 @@ public class PageParser {
     public synchronized void cancel() {
         service.shutdown();
 
-        if (delay < 0) {
+        if (period < 0) {
             return;
         }
 

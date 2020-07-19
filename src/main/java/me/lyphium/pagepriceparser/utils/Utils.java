@@ -20,31 +20,31 @@ public class Utils {
 
     private final SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
 
-    private final Map<String, Long> delayTable = new HashMap<String, Long>() {{
+    private final Map<String, Long> periodTable = new HashMap<String, Long>() {{
         put("[\\d]+(?=s)", 1L);
         put("[\\d]+(?=m)", 60L);
         put("[\\d]+(?=h)", 3600L);
         put("[\\d]+(?=d)", 86400L);
     }};
 
-    public long calculateDelay(String s) {
+    public long calculatePeriod(String s) {
         try {
             if (s.matches("(-)?(\\d)+")) {
                 return Long.parseLong(s);
             }
 
-            long delay = 0;
-            for (Entry<String, Long> entry : delayTable.entrySet()) {
+            long period = 0;
+            for (Entry<String, Long> entry : periodTable.entrySet()) {
                 Pattern p = Pattern.compile(entry.getKey());
                 Matcher m = p.matcher(s);
 
                 if (m.find()) {
-                    delay += Long.parseUnsignedLong(s.substring(m.start(), m.end())) * entry.getValue();
+                    period += Long.parseUnsignedLong(s.substring(m.start(), m.end())) * entry.getValue();
                 }
             }
-            return delay * 1000;
+            return period * 1000;
         } catch (Exception e) {
-            return PageParser.DEFAULT_DELAY;
+            return PageParser.DEFAULT_PERIOD;
         }
     }
 
