@@ -11,7 +11,6 @@ import java.util.Date;
 public class PrettyPrintStream extends PrintStream {
 
     private static final Date DATE = new Date();
-    private static final Object LOCK = new Object();
 
     private static final File LOG_FILE = new File(
             "logs",
@@ -28,7 +27,7 @@ public class PrettyPrintStream extends PrintStream {
     private final String prefix;
 
     public PrettyPrintStream(OutputStream out, String prefix) {
-        super(out);
+        super(out, true);
         this.prefix = prefix;
     }
 
@@ -74,13 +73,7 @@ public class PrettyPrintStream extends PrintStream {
 
     @Override
     public void println(String x) {
-        synchronized (LOCK) {
-            super.println(x);
-            log("\n");
-
-            empty = true;
-            cur = null;
-        }
+        print(x + '\n');
     }
 
     @Override
@@ -128,49 +121,47 @@ public class PrettyPrintStream extends PrintStream {
         if (s == null)
             s = "null";
 
-        synchronized (LOCK) {
-            if (cur != null && cur != this) {
-                log("\n");
-                super.write('\n');
+        if (cur != null && cur != this) {
+            log("\n");
+            super.write('\n');
 
-                empty = true;
-            }
-
-            cur = this;
-
-            final String[] split = s.split("(?<=\n)");
-            final String prefix = getPrefix();
-
-            if (split.length == 0) {
-                if (empty) {
-                    log(prefix);
-                    super.print(prefix);
-
-                    empty = false;
-                }
-                return;
-            }
-
-            final StringBuilder builder = new StringBuilder();
-            for (String line : split) {
-                if (empty) {
-                    builder.append(prefix).append(line);
-                } else {
-                    builder.append(line);
-                }
-
-                empty = !line.isEmpty() && line.charAt(line.length() - 1) == '\n';
-            }
-
-            if (empty) {
-                cur = null;
-            }
-
-            final String text = builder.toString();
-
-            log(text);
-            super.print(text);
+            empty = true;
         }
+
+        cur = this;
+
+        final String[] split = s.split("(?<=\n)");
+        final String prefix = getPrefix();
+
+        if (split.length == 0) {
+            if (empty) {
+                log(prefix);
+                super.print(prefix);
+
+                empty = false;
+            }
+            return;
+        }
+
+        final StringBuilder builder = new StringBuilder();
+        for (String line : split) {
+            if (empty) {
+                builder.append(prefix).append(line);
+            } else {
+                builder.append(line);
+            }
+
+            empty = !line.isEmpty() && line.charAt(line.length() - 1) == '\n';
+        }
+
+        if (empty) {
+            cur = null;
+        }
+
+        final String text = builder.toString();
+
+        log(text);
+        super.print(text);
     }
 
     @Override

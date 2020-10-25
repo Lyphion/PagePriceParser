@@ -81,7 +81,7 @@ public class Bot {
                 i++;
             }
             // Disable log file
-            else if (part.equals("-nl")) {
+            else if (part.equals("--nl")) {
                 PrettyPrintStream.setLog(false);
             }
         }
